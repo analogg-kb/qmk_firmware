@@ -43,9 +43,13 @@ enum keyboard_keycodes   {
     BT_DEFAULT,
 };
 
-#define  BT_TN1   BT_TUNNEL1
-#define  BT_TN2   BT_TUNNEL2
-#define  BT_TN3   BT_TUNNEL3
-#define  BT_TN4   BT_TUNNEL4
-#define  BT_TN5   BT_TUNNEL5
-#define  BT_FTY   BT_DEFAULT
+#define BT_TN1 BT_TUNNEL1
+#define BT_TN2 BT_TUNNEL2
+#define BT_TN3 BT_TUNNEL3
+#define BT_TN4 BT_TUNNEL4
+#define BT_TN5 BT_TUNNEL5
+#define BT_FTY BT_DEFAULT
+#define IS_BLE_PIN B8
+
+#define SWITCH_BLE_MODE() (readPin(IS_BLE_PIN))
+#define SWITCH_USB_MODE() (!SWITCH_BLE_MODE())
