@@ -2,7 +2,7 @@
 
 ## General information
 
-![analogg_dbg103/rev3](https://imgur.com/dlwcDbS)
+![analogg_dbg103/rev3](https://i.imgur.com/dlwcDbSh.jpg)
 
 *Analogg, Aluminum Body Wireless QMK&VIA Mechanical Keyboard*
 
