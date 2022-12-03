@@ -172,7 +172,7 @@ uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
         if (state==CONNECTED || state==CONNECTED_AND_ACTIVE) indicator_ble_on();
 
         //POWER LED state
-        // uprintf("chrgCount=%d %b\n",chrgCount,isChrg);
+        // uprintf("chrgCount=%d %d\n",chrgCount,isChrg);
         static uint8_t rgb_pwm_inc=0, rgb_pwm_dec=0;
         if (chrgCount>30)isChrg = 1;
         chrgCount = 0;
@@ -378,7 +378,7 @@ void long_pressed_event(void){
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (!readPin(IS_BLE)){
         #ifdef CONSOLE_ENABLE
-            uprintf("CABLE KC: 0x%04X, pressed: %b, time: %u, count: %u\n", keycode, record->event.pressed, record->event.time, record->tap.count); 
+            uprintf("CABLE KC: 0x%04X, pressed: %d, time: %u, count: %u\n", keycode, record->event.pressed, record->event.time, record->tap.count); 
         #endif 
         return process_record_user(keycode, record);
     }
@@ -417,7 +417,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     
     if (!isInit)return process_record_user(keycode, record);
     
-    uprintf("KC: 0x%04X, pressed: %b\n", keycode, record->event.pressed);   
+    uprintf("KC: 0x%04X, pressed: %d\n", keycode, record->event.pressed);   
 
     ble_state_led = BLE_LED_INDICATOR;
     push_cmd(DATA_TYPE_DEFAULT_KEY,keycode,record->event.pressed);
@@ -430,7 +430,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 
 // bool led_update_kb(led_t led_state) {
 //     if (led_update_user(led_state)) {
-//         uprintf("led_state: %b\n", led_state.caps_lock);   
+//         uprintf("led_state: %d\n", led_state.caps_lock);   
 //     }
 //     return true;
 // }
