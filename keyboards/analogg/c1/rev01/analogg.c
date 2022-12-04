@@ -417,34 +417,16 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
         }
         return process_record_user(keycode, record);
     } 
-
-    // if (keycode==0x1E){
-    //     analogg_ble_send_cmd_by_val(DATA_TYPE_SET_BAUD, 2);
-    //     return process_record_user(keycode, record);
-    // }
-    
-    if (!isInit)return process_record_user(keycode, record);
     
     uprintf("KC: 0x%04X, pressed: %d\n", keycode, record->event.pressed);   
-
-    ble_state_led = BLE_LED_INDICATOR;
-    push_cmd(DATA_TYPE_DEFAULT_KEY,keycode,record->event.pressed);
-
-    // if (keycode==KC_CAPS){
-        // return process_record_user(keycode, record);
-    // }
-    return false;
-
-    // return process_record_user(keycode, record);
+    if (IS_ANY(keycode)){
+        ble_state_led = BLE_LED_INDICATOR;
+        push_cmd(DATA_TYPE_DEFAULT_KEY,keycode,record->event.pressed);
+        return false;
+    }else{
+        return process_record_user(keycode, record);
+    }
 }
-
-// bool led_update_kb(led_t led_state) {
-//     if (led_update_user(led_state)) {
-//         uprintf("led_state: %b\n", led_state.caps_lock);   
-//     }
-//     return true;
-// }
-
 
 bool uart_tx_data_handle(void){
     if (isInit && ble_send_state==TX_IDLE && bufferPop(&pop_protocol_cmd)){
@@ -517,7 +499,7 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
 #endif
 
 #ifdef RGB_MATRIX_ENABLE
-                     const is31_led PROGMEM g_is31_leds[RGB_MATRIX_LED_COUNT] = {
+const is31_led PROGMEM g_is31_leds[RGB_MATRIX_LED_COUNT] = {
 /* Refer to IS31 manual for these locations
  *   driver
  *   |  G location
