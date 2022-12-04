@@ -385,7 +385,7 @@ void long_pressed_event(void){
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (!readPin(IS_BLE)){
         #ifdef CONSOLE_ENABLE
-            uprintf("CABLE KC: 0x%04X, pressed: %b, time: %u, count: %u\n", keycode, record->event.pressed, record->event.time, record->tap.count); 
+            uprintf("CABLE KC: 0x%04X, pressed: %d, time: %u, count: %u\n", keycode, record->event.pressed, record->event.time, record->tap.count); 
         #endif 
         return process_record_user(keycode, record);
     }
@@ -424,7 +424,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     
     if (!isInit)return process_record_user(keycode, record);
     
-    uprintf("KC: 0x%04X, pressed: %b\n", keycode, record->event.pressed);   
+    uprintf("KC: 0x%04X, pressed: %d\n", keycode, record->event.pressed);   
 
     ble_state_led = BLE_LED_INDICATOR;
     push_cmd(DATA_TYPE_DEFAULT_KEY,keycode,record->event.pressed);
