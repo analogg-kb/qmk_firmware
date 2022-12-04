@@ -322,9 +322,9 @@ void ble_state_show_by_rgb_matrix(uint8_t index,uint8_t state){
     }
 }
 
-void rgb_matrix_indicators_kb(void) {
+bool rgb_matrix_indicators_kb(void) {
      if (is_ble_work_state_input())
-        return;
+        return false;
 
     if (ble_state_led!=BLE_LED_INDICATOR)rgb_matrix_set_color_all(0,0,0);
 
@@ -336,6 +336,7 @@ void rgb_matrix_indicators_kb(void) {
             ble_state_show_by_rgb_matrix(31+i,ble_tunnel_state.list[i]);
         }
     }
+    return true;
 }
 
 // void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
@@ -385,7 +386,7 @@ void long_pressed_event(void){
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (!readPin(IS_BLE)){
         #ifdef CONSOLE_ENABLE
-            uprintf("CABLE KC: 0x%04X, pressed: %b, time: %u, count: %u\n", keycode, record->event.pressed, record->event.time, record->tap.count); 
+            uprintf("CABLE KC: 0x%04X, pressed: %d, time: %u, count: %u\n", keycode, record->event.pressed, record->event.time, record->tap.count); 
         #endif 
         return process_record_user(keycode, record);
     }
@@ -424,7 +425,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     
     if (!isInit)return process_record_user(keycode, record);
     
-    uprintf("KC: 0x%04X, pressed: %b\n", keycode, record->event.pressed);   
+    uprintf("KC: 0x%04X, pressed: %d\n", keycode, record->event.pressed);   
 
     ble_state_led = BLE_LED_INDICATOR;
     push_cmd(DATA_TYPE_DEFAULT_KEY,keycode,record->event.pressed);
@@ -516,7 +517,7 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
 #endif
 
 #ifdef RGB_MATRIX_ENABLE
-                     const is31_led PROGMEM g_is31_leds[DRIVER_LED_TOTAL] = {
+                     const is31_led PROGMEM g_is31_leds[RGB_MATRIX_LED_COUNT] = {
 /* Refer to IS31 manual for these locations
  *   driver
  *   |  G location

@@ -373,7 +373,7 @@ static uint16_t ble_protocol_consumer_byte7[8] = {
     0}; // TODO bit7 Microphone};
 
 static uint16_t ble_protocol_consumer_byte8[8] = {
-    KC_POWER,    0,     0,    0,
+    KC_PWR,    0,     0,    0,
     0,  // TODO bit4 AL Screen Saver     
     KC_MEDIA_EJECT,   0,    0};
 
@@ -523,7 +523,7 @@ bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd){
 			} 
 		} 
 		general_protocol_array_of_byte(DATA_TYPE_CONSUMER_KEY,sizeof(ble_protocol_consumer),&ble_protocol_consumer[0]);
-	}else if (IS_ERROR(keycode)){
+	} else {
 		return false;
 	}
     return true;

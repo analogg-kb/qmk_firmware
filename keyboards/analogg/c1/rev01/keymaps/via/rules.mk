@@ -5,4 +5,4 @@ SRC = \
 	analogg_ble.c \
 	analogg.c \
 	analog.c \
-    led_indicator.c \
+    led_indicator.c

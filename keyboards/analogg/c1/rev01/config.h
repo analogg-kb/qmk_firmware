@@ -40,7 +40,7 @@
     // #define PHASE_CHANNEL MSKPHASE_9CHANNEL
 
     /* Set the maxium brightness as 192 in order to limit the current to 450mA */
-    #define RGB_MATRIX_MAXIMUM_BRIGHTNESS (24 * 8)  // 8 = RGB_MATRIX_VAL_STEP
+    #define RGB_MATRIX_MAXIMUM_BRIGHTNESS 192  // 14*8, 8 = RGB_MATRIX_VAL_STEP
 
     /* Enable caps-lock LED */
     // #define CAPS_LOCK_LED_INDEX 45
@@ -52,7 +52,7 @@
     // #define RGB_MATRIX_KEYPRESSES
     // #define RGB_MATRIX_KEYRELEASES
     // #define RGB_MATRIX_LED_PROCESS_LIMIT 1
-    #define RGB_MATRIX_LED_PROCESS_LIMIT (DRIVER_LED_TOTAL + 4) / 5
+    #define RGB_MATRIX_LED_PROCESS_LIMIT (RGB_MATRIX_LED_COUNT + 4) / 5
     #define RGB_MATRIX_LED_FLUSH_LIMIT 16
 
     // #define EECONFIG_RGB_MATRIX (uint32_t *)28
@@ -72,7 +72,7 @@
     /* RGB Matrix Configuration */
     #define DRIVER_1_LED_TOTAL 45
     #define DRIVER_2_LED_TOTAL 45
-    #define DRIVER_LED_TOTAL (DRIVER_1_LED_TOTAL + DRIVER_2_LED_TOTAL)
+    #define RGB_MATRIX_LED_COUNT (DRIVER_1_LED_TOTAL + DRIVER_2_LED_TOTAL)
 
     /* Disable RGB lighting when PC is in suspend */
     // #define RGB_DISABLE_WHEN_USB_SUSPENDED
