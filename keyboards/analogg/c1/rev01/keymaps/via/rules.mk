@@ -6,4 +6,3 @@ SRC = \
 	analogg.c \
 	analog.c \
     led_indicator.c \
-	

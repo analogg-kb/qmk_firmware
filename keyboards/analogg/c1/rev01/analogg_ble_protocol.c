@@ -59,7 +59,7 @@ void push_cmd(uint8_t type, uint16_t keycode, bool pressed){
     0x04：Battery level
     0x05：AT mode
  */
-uint8_t cmdDataBuffer[20];
+uint8_t cmdDataBuffer[160];
 uint8_t cmdDataBufferSize = 8;
 void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t *bleData){
 	uint8_t offset=0, sum=0;
@@ -106,11 +106,14 @@ void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t 
 
 #define INDEX_RESET 			-1
 #define PROTOCOL_DATA_SIZE      32
-#define DATA_PARSE_MAX 			32
+#define DATA_PARSE_MAX 			255
 uint8_t pos = INDEX_RESET;
 uint8_t dataLen  = 0;
 uint8_t checkSum = 0;
 uint8_t protocolData[PROTOCOL_DATA_SIZE];
+
+#define LOG_SIZE 			128
+uint8_t log_buffer[LOG_SIZE];
 
 void resetGetData(void){
 	dataLen = 0;
@@ -151,6 +154,11 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 		case DATA_TYPE_BATTERY_LEVEL:
 			break;
 		case DATA_TYPE_STATE:
+			/**
+			 * @brief 
+			 * dataLen = 0x0A  ble state
+			 * dataLen > 0x0A  ble state + log
+			 */
 			if (!readPin(IS_BLE)){
 				if (!is_kb_startup){
 					is_kb_startup=true;
@@ -168,6 +176,20 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 				ble_tunnel_state.list[i] = data_package[9+i];
 				// uprintf(" %02x,",ble_tunnel_state.list[i]);
 			}
+
+			// log: indexstart=17
+			if (dataLen>0x0a){
+				uint8_t logSize = dataLen-0x0a;
+				if(logSize>LOG_SIZE){
+					logSize=LOG_SIZE;
+				}
+				memsets(log_buffer,0,LOG_SIZE);
+				for (uint8_t i = 0; i < logSize; i++){
+					log_buffer[i] = data_package[17+i];
+				}
+				uprintf("Log:%s",log_buffer);
+			}
+			
 			ble_send_state = TX_IDLE; 
 			return true;  
 		case DATA_TYPE_GET_TUNNEL_ID:
@@ -220,9 +242,9 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 }
 
 void analogg_ble_resolve_protocol(uint8_t byte){
-	#ifdef CONSOLE_ENABLE
-		// uprintf("%02x ", byte);	// uprintf("%c", toupper(byte)); 
-	#endif 
+	// #ifdef CONSOLE_ENABLE
+	// 	uprintf("%02x ", byte);	// uprintf("%c", toupper(byte)); 
+	// #endif 
     if (pos==INDEX_RESET){
 		resetGetData();
 	}
@@ -363,14 +385,18 @@ bool analogg_ble_config_handle(protocol_cmd _protocol_cmd){
 		general_protocol_array_of_byte(_protocol_cmd.type,0,NULL);
 		return true;
 	}
-	
-    analogg_ble_reset_leds();
 	ble_protocol_payload_cmd[0] = _protocol_cmd.value;
+	if (_protocol_cmd.type==DATA_TYPE_BATTERY_LEVEL){
+		general_protocol_array_of_byte(_protocol_cmd.type,sizeof(ble_protocol_payload_cmd),&ble_protocol_payload_cmd[0]);
+		return true;
+	}
+
+    analogg_ble_reset_leds();
 
 	switch (_protocol_cmd.type){
-		case DATA_TYPE_BATTERY_LEVEL:
-			general_protocol_array_of_byte(_protocol_cmd.type,sizeof(ble_protocol_payload_cmd),&ble_protocol_payload_cmd[0]);
-			break;
+		// case DATA_TYPE_BATTERY_LEVEL:
+		// 	general_protocol_array_of_byte(_protocol_cmd.type,sizeof(ble_protocol_payload_cmd),&ble_protocol_payload_cmd[0]);
+		// 	break;
 		case DATA_TYPE_GET_TUNNEL_ID:
 			break;
 		case DATA_TYPE_SWITCH:
