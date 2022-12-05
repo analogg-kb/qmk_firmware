@@ -50,6 +50,7 @@ bool            custom_pressed              = false;
 uint16_t        custom_keycode              = KC_NO;
 uint16_t        last_keycode                = KC_NO;
 uint16_t        custom_pressed_long_time    = 0;
+uint16_t        log_time                    = 0;
 
 #define SLEEP_NO_PRESSED_TIMEOUT    60
 #define SLEEP_RGB_ENBLE_ON          61
@@ -237,7 +238,9 @@ uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
         }
 
         pressed_timeout_turn_off_led();
+        log_time++;
     }
+
     if (time_count%BLE_INDICATOR_2S==0){
         if (state==IDLE || state==ADV_WAIT_CONNECTING || state==ADV_WAIT_CONNECTING_INACTIVE){
             led_indicator.ble = indicator_set_rgb(RGB_BLACK);
@@ -368,7 +371,7 @@ void long_pressed_event(void){
                     analogg_ble_send_cmd(DATA_TYPE_DEFAULT);
                     ble_state_led = BLE_LED_KEY_ALL;
                     analogg_ble_send_cmd(DATA_TYPE_STATE);
-                    uprintf("%5d Q:Restore factory mode\n",timer_read());
+                    uprintf("%5d Q:Restore factory mode\n",log_time);
                 break;
                 default: break;
             }
@@ -381,7 +384,7 @@ void long_pressed_event(void){
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (!readPin(IS_BLE)){
         #ifdef CONSOLE_ENABLE
-            uprintf("%5d Q:cable,kc=%04x pressed=%d\n",timer_read(),keycode,record->event.pressed);
+            uprintf("%5d Q:cable,kc=%04x pressed=%d\n",log_time,keycode,record->event.pressed);
         #endif 
         return process_record_user(keycode, record);
     }

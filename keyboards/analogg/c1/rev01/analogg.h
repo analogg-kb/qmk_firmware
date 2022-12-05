@@ -73,6 +73,7 @@ enum keyboard_keycodes   {
 
 #define LONG_PRESSED_TIME           3000
 
+extern uint16_t log_time;
 
 typedef enum {
     BLE_LED_KEY_ONE= 0,

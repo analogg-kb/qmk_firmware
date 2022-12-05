@@ -181,7 +181,7 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 				for (uint8_t i = 0; i < logSize; i++){
 					log_buffer[i] = data_package[17+i];
 				}
-				uprintf("%5d B:%s",timer_read(),log_buffer);
+				uprintf("%5d B:%s",log_time,log_buffer);
 			}
 			
 			ble_send_state = TX_IDLE; 
@@ -254,7 +254,7 @@ void analogg_ble_resolve_protocol(uint8_t byte){
         //version
 	}else if (pos==5){  
 		if (byte!=mSeqId){
-			uprintf("%5d Q:id error,id=%02x seqId=%02x\n",timer_read(),byte,mSeqId);
+			uprintf("%5d Q:id error,id=%02x seqId=%02x\n",log_time,byte,mSeqId);
 			pos=INDEX_RESET;    //mSeqId
 		}
 	}else if (pos==6){
