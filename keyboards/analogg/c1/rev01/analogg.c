@@ -61,18 +61,6 @@ protocol_cmd    pop_protocol_cmd            = {0};
 _ble_state_led  ble_state_led               = BLE_LED_INDICATOR;
 _led_indicator  led_indicator               = {.power={RGB_BLACK},.ble={RGB_BLACK},.caps_lock={RGB_BLUE},.battery_level={RGB_BLACK}};
 
-void enable_swdp(void){
-// #ifdef ENABLE_SWDP
-//     AFIO->MAPR&=0XF8FFFFFF;     //disable JTAG enable SWD   
-//     AFIO->MAPR|=0X02000000;     
-// #else 
-//     AFIO->MAPR&=0XF8FFFFFF;     //disable JTAG and SWD 
-//     AFIO->MAPR|=0X04000000;     
-// #endif
-    AFIO->MAPR &= ~AFIO_MAPR_SWJ_CFG_Msk;     //disable JTAG and SWD 
-    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_DISABLE_Msk; 
-}
-
 static const SerialConfig ble_uart_config = {
     .speed = 115200  //921600
 };
@@ -106,7 +94,13 @@ bool receive(SerialDriver *sdp, uint8_t* destination, const size_t size) {
 
 /* --------------------------- qmk function------------------------------ */
 void board_init(void){
-    enable_swdp();
+#ifdef ENABLE_SWDP
+    AFIO->MAPR &= ~AFIO_MAPR_SWJ_CFG_Msk;     
+    AFIO->MAPR|=AFIO_MAPR_SWJ_CFG_JTAGDISABLE;  //disable JTAG enable SWD    
+#else 
+    AFIO->MAPR &= ~AFIO_MAPR_SWJ_CFG_Msk;     
+    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_DISABLE_Msk; //disable JTAG and SWD 
+#endif
 }
 
 void keyboard_pre_init_kb(void) {
@@ -275,7 +269,7 @@ void pressed_timeout_turn_off_led(void){
 }
 
 void pressed_turn_on_led(void){
-    if (sleep_pressed_time==SLEEP_RGB_ENBLE_OFF){
+    if (sleep_pressed_time>=SLEEP_NO_PRESSED_TIMEOUT){
         rgb_matrix_enable_noeeprom();
     }
     sleep_pressed_time = 0;
@@ -391,6 +385,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
         return process_record_user(keycode, record);
     }
 
+    // uprintf("KC: 0x%04X, pressed: %d\n", keycode, record->event.pressed);
     pressed_turn_on_led();
     //BLE mode
     if (keycode>=QK_MOMENTARY && keycode<=QK_MOMENTARY_MAX){   //fn
@@ -416,9 +411,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             }
         }
         return process_record_user(keycode, record);
-    } 
-    
-    uprintf("KC: 0x%04X, pressed: %d\n", keycode, record->event.pressed);   
+    }
     if (IS_ANY(keycode)){
         ble_state_led = BLE_LED_INDICATOR;
         push_cmd(DATA_TYPE_DEFAULT_KEY,keycode,record->event.pressed);

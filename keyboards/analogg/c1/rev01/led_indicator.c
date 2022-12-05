@@ -1,6 +1,3 @@
-/**
- * indicator.c
- */
 
 #include "led_indicator.h"
 #include "ws2812.c"

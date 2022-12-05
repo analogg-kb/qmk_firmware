@@ -28,9 +28,14 @@ enum layers{
     MAC_FN,          
 };
 
+
 // KEYCODES
 enum keyboard_keycodes   {
-    BT_TUNNEL1 = USER00,
+    #ifdef VIA_ENABLE
+        BT_TUNNEL1 = USER00,
+    #else
+        BT_TUNNEL1 = SAFE_RANGE,
+    #endif
     BT_TUNNEL2,     
     BT_TUNNEL3,       
     BT_TUNNEL4,       

@@ -91,11 +91,17 @@ void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t 
 
 	uint8_t sum = 0, size = cmdDataBufferSize-1;
 	cmdDataBuffer[5] = seqId;
-	// uprintf("[");
+	if (cmdDataBuffer[3]==0x01){
+		uprintf("[");
+	}
 	// uprintf("[%02x]\n",cmdDataBuffer[3]);
 	for (uint8_t i = 0; i < size; i++){
 		sum+=cmdDataBuffer[i];
-		// uprintf("%02x ",cmdDataBuffer[i]);
+		if(i>=9 && cmdDataBuffer[3]==0x01)uprintf("%02x ",cmdDataBuffer[i]);
+	}
+	
+	if (cmdDataBuffer[3]==0x01){
+		uprintf("]\n");
 	}
 	// uprintf("%02x] %d %d\n",sum,mSeqId,timer_read());
 	cmdDataBuffer[size] = sum;
@@ -416,15 +422,15 @@ bool analogg_ble_config_handle(protocol_cmd _protocol_cmd){
 			break;
 		case DATA_TYPE_PAIR:
 			general_protocol_array_of_byte(_protocol_cmd.type,sizeof(ble_protocol_payload_cmd),&ble_protocol_payload_cmd[0]);
-			break;
+			return true;
 		case DATA_TYPE_UNPLUG:
 			general_protocol_array_of_byte(_protocol_cmd.type,sizeof(ble_protocol_payload_cmd),&ble_protocol_payload_cmd[0]);
-			break;
+			return true;
 		case DATA_TYPE_GET_BAUD:
 			break;
 		case DATA_TYPE_SET_BAUD:
 			general_protocol_array_of_byte(_protocol_cmd.type,sizeof(ble_protocol_payload_cmd),&ble_protocol_payload_cmd[0]);
-			break;
+			return true;
 		case DATA_TYPE_HD_VERSION:
 			break;
 		case DATA_TYPE_DFU:
