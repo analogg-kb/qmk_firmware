@@ -91,18 +91,18 @@ void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t 
 
 	uint8_t sum = 0, size = cmdDataBufferSize-1;
 	cmdDataBuffer[5] = seqId;
-	if (cmdDataBuffer[3]==0x01){
-		uprintf("[");
-	}
+	// if (cmdDataBuffer[3]==0x01){
+	// 	uprintf("[");
+	// }
 	// uprintf("[%02x]\n",cmdDataBuffer[3]);
 	for (uint8_t i = 0; i < size; i++){
 		sum+=cmdDataBuffer[i];
-		if(i>=9 && cmdDataBuffer[3]==0x01)uprintf("%02x ",cmdDataBuffer[i]);
+		// if(i>=9 && cmdDataBuffer[3]==0x01)uprintf("%02x ",cmdDataBuffer[i]);
 	}
 	
-	if (cmdDataBuffer[3]==0x01){
-		uprintf("]\n");
-	}
+	// if (cmdDataBuffer[3]==0x01){
+	// 	uprintf("]\n");
+	// }
 	// uprintf("%02x] %d %d\n",sum,mSeqId,timer_read());
 	cmdDataBuffer[size] = sum;
 	
