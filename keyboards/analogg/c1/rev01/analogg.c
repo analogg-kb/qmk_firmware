@@ -269,6 +269,7 @@ void pressed_timeout_turn_off_led(void){
 }
 
 void pressed_turn_on_led(void){
+
     if (sleep_pressed_time>=SLEEP_NO_PRESSED_TIMEOUT){
         rgb_matrix_enable_noeeprom();
     }
@@ -353,7 +354,7 @@ void long_pressed_event(void){
         
         time = timer_read()>custom_pressed_long_time ? (timer_read()-custom_pressed_long_time) : (65535-custom_pressed_long_time)+timer_read();
         if (time>=LONG_PRESSED_TIME && last_keycode != KC_NO){
-            uprintf(" BLE time---: %d  0x%04X\n", time,custom_keycode);
+            //uprintf(" BLE time---: %d  0x%04X\n", time,custom_keycode);
             switch (custom_keycode){
                 case BT_TN1: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 1);break;
                 case BT_TN2: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 2);break;
@@ -367,7 +368,7 @@ void long_pressed_event(void){
                     analogg_ble_send_cmd(DATA_TYPE_DEFAULT);
                     ble_state_led = BLE_LED_KEY_ALL;
                     analogg_ble_send_cmd(DATA_TYPE_STATE);
-                    uprintf(" factory mode.\n");
+                    uprintf("%5d Q:Restore factory mode\n",timer_read());
                 break;
                 default: break;
             }
@@ -380,12 +381,11 @@ void long_pressed_event(void){
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (!readPin(IS_BLE)){
         #ifdef CONSOLE_ENABLE
-            uprintf("CABLE KC: 0x%04X, pressed: %d, time: %u, count: %u\n", keycode, record->event.pressed, record->event.time, record->tap.count); 
+            uprintf("%5d Q:cable,kc=%04x pressed=%d\n",timer_read(),keycode,record->event.pressed);
         #endif 
         return process_record_user(keycode, record);
     }
 
-    // uprintf("KC: 0x%04X, pressed: %d\n", keycode, record->event.pressed);
     pressed_turn_on_led();
     //BLE mode
     if (keycode>=QK_MOMENTARY && keycode<=QK_MOMENTARY_MAX){   //fn
@@ -468,9 +468,6 @@ void matrix_scan_kb(void) {
 bool dip_switch_update_kb(uint8_t index, bool active) {
     if (!dip_switch_update_user(index, active)) { return false;}
     if (index == 0) {
-    #ifdef CONSOLE_ENABLE
-        uprintf("dip_switch: index=%d, active= %d\n", (index), active); 
-    #endif 
         default_layer_set(1UL << (active ? 2 : 0)); 
     }
     return true;

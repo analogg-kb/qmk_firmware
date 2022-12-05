@@ -91,21 +91,12 @@ void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t 
 
 	uint8_t sum = 0, size = cmdDataBufferSize-1;
 	cmdDataBuffer[5] = seqId;
-	// if (cmdDataBuffer[3]==0x01){
-	// 	uprintf("[");
-	// }
-	// uprintf("[%02x]\n",cmdDataBuffer[3]);
+
 	for (uint8_t i = 0; i < size; i++){
 		sum+=cmdDataBuffer[i];
 		// if(i>=9 && cmdDataBuffer[3]==0x01)uprintf("%02x ",cmdDataBuffer[i]);
 	}
-	
-	// if (cmdDataBuffer[3]==0x01){
-	// 	uprintf("]\n");
-	// }
-	// uprintf("%02x] %d %d\n",sum,mSeqId,timer_read());
 	cmdDataBuffer[size] = sum;
-	
 	send(&SD1,cmdDataBuffer,cmdDataBufferSize);
 	// sdWrite(&SD1, cmdDataBuffer, cmdDataBufferSize); 
  }
@@ -143,7 +134,6 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 		return false;
 	}
 	
-	// uprintf(" type=%02x\n",type);
 	if (type==DATA_TYPE_KEY || type==DATA_TYPE_CONSUMER_KEY || type==DATA_TYPE_SYSTEM_CONTROL){
 		if (is_rgb_enabled){
 			rgb_matrix_enable_noeeprom();
@@ -172,7 +162,6 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 					if (tunnel==0 || tunnel>BLE_TUNNEL_NUM){
 						tunnel = 1;
 					}
-					// uprintf("read tunnel= %d,",tunnel);
 					analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, tunnel);
 				}
 			}
@@ -180,7 +169,6 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 			ble_tunnel_state.tunnel = data_package[8];
 			for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++){
 				ble_tunnel_state.list[i] = data_package[9+i];
-				// uprintf(" %02x,",ble_tunnel_state.list[i]);
 			}
 
 			// log: indexstart=17
@@ -193,7 +181,7 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 				for (uint8_t i = 0; i < logSize; i++){
 					log_buffer[i] = data_package[17+i];
 				}
-				uprintf("Log:%s",log_buffer);
+				uprintf("%5d B:%s",timer_read(),log_buffer);
 			}
 			
 			ble_send_state = TX_IDLE; 
@@ -202,7 +190,6 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 			break;
 		case DATA_TYPE_SWITCH:
 			analogg_ble_send_cmd(DATA_TYPE_STATE);
-			uprintf("switch=%d\n",tunnel);
 			break;
 		case DATA_TYPE_GET_AUTH:
 			break;
@@ -221,7 +208,6 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 			break;
 		case DATA_TYPE_UNPLUG:
 			analogg_ble_send_cmd_by_id(DATA_TYPE_PAIR, tunnel);
-			uprintf("unplug=%d\n",tunnel);
 			break;
 		case DATA_TYPE_GET_BAUD:
 			break;
@@ -268,7 +254,7 @@ void analogg_ble_resolve_protocol(uint8_t byte){
         //version
 	}else if (pos==5){  
 		if (byte!=mSeqId){
-			uprintf("Id err byte:%02x mSeqId:%02x %d\n",byte,mSeqId,timer_read());
+			uprintf("%5d Q:id error,id=%02x seqId=%02x\n",timer_read(),byte,mSeqId);
 			pos=INDEX_RESET;    //mSeqId
 		}
 	}else if (pos==6){
