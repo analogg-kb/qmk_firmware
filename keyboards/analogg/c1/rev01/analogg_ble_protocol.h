@@ -73,6 +73,7 @@ void resetGetData(void);
 void clear_buffer(void);
 void push_cmd(uint8_t type, uint16_t keycode, bool pressed);
 
+void clear_keycode_buffer(void);
 void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t *bleData);
 void analogg_ble_resolve_protocol(uint8_t byte);
 void analogg_ble_cmd_tx(uint8_t seqId);

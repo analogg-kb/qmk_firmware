@@ -377,6 +377,12 @@ static uint16_t ble_protocol_consumer_byte8[8] = {
     KC_MEDIA_EJECT,   0,    0};
 
 //-------------------------------------------------------------------------------------------------------------------------	
+void clear_keycode_buffer(void){
+	memsets(ble_protocol_key,0,8);
+	memsets(ble_protocol_consumer,0,4);
+	ble_protocol_system[0]=0;
+}
+
 bool analogg_ble_config_handle(protocol_cmd _protocol_cmd){
 
 	if (is_ble_work_state()==INPUT_MODE)set_ble_work_state(WAIT_CONFIG_MODE);
@@ -399,6 +405,7 @@ bool analogg_ble_config_handle(protocol_cmd _protocol_cmd){
 		case DATA_TYPE_GET_TUNNEL_ID:
 			break;
 		case DATA_TYPE_SWITCH:
+			clear_keycode_buffer();
 			general_protocol_array_of_byte(_protocol_cmd.type,sizeof(ble_protocol_payload_cmd),&ble_protocol_payload_cmd[0]);
 			return true;
 		case DATA_TYPE_GET_AUTH:
@@ -414,6 +421,7 @@ bool analogg_ble_config_handle(protocol_cmd _protocol_cmd){
 		case DATA_TYPE_SET_NAME:
 			break;
 		case DATA_TYPE_PAIR:
+			clear_keycode_buffer();
 			general_protocol_array_of_byte(_protocol_cmd.type,sizeof(ble_protocol_payload_cmd),&ble_protocol_payload_cmd[0]);
 			return true;
 		case DATA_TYPE_UNPLUG:
@@ -431,6 +439,7 @@ bool analogg_ble_config_handle(protocol_cmd _protocol_cmd){
 		case DATA_TYPE_RESET:
 			break;
 		case DATA_TYPE_DEFAULT:
+			clear_keycode_buffer();
 			general_protocol_array_of_byte(_protocol_cmd.type,sizeof(ble_protocol_payload_cmd),&ble_protocol_payload_cmd[0]);
 			break;
 		case DATA_TYPE_GET_SLEEP:
@@ -443,12 +452,12 @@ bool analogg_ble_config_handle(protocol_cmd _protocol_cmd){
 	return false;
 }
 
-uint16_t getLastPressedKey(uint8_t bufferByte, uint8_t size, uint16_t baseKeycode){
-    uint8_t i;
-    if (size>8)return 0;
-    for(i=0; i<size; i++)if(bufferByte==ble_protocol_bitH0_7[i]) return baseKeycode+i;
-    return 0; 
-}
+// uint16_t getLastPressedKey(uint8_t bufferByte, uint8_t size, uint16_t baseKeycode){
+//     uint8_t i;
+//     if (size>8)return 0;
+//     for(i=0; i<size; i++)if(bufferByte==ble_protocol_bitH0_7[i]) return baseKeycode+i;
+//     return 0; 
+// }
 
 bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd){
 
@@ -457,28 +466,30 @@ bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd){
     uint8_t i = 0, j = 0;
     uint16_t keycode = _protocol_cmd.value;
 	if (IS_KEY(keycode)){
+		bool isExist = false;
 		for(i=2; i<8; i++){
 			if (_protocol_cmd.pressed){
+				if (!isExist && ble_protocol_key[i]==keycode){
+					isExist = true;
+					continue;
+				}
+				
+				if(isExist && ble_protocol_key[i]==keycode){ //if it exists, clear it;
+					ble_protocol_key[i] = 0;
+				}
+
 				if (ble_protocol_key[i]==0){
 					ble_protocol_key[i]=keycode; 
 					break;
 				}
-				if(ble_protocol_key[i]==keycode)
-					break;
 			}else{
 				if(ble_protocol_key[i]==keycode){
 					ble_protocol_key[i] = 0;
-					break; 
 				}
 			}
 		}  
 		general_protocol_array_of_byte(DATA_TYPE_KEY,sizeof(ble_protocol_key),&ble_protocol_key[0]);  
 	}else if(IS_MOD(keycode)){
-		// if (_protocol_cmd.pressed){
-		// 	if(ble_protocol_key[0]==0)ble_protocol_key[0] = ble_protocol_bitH0_7[keycode-KC_LEFT_CTRL];
-		// }else{
-		// 	if(keycode==getLastPressedKey(ble_protocol_key[0],8,KC_LEFT_CTRL))ble_protocol_key[0]=0;
-		// }
 		if (_protocol_cmd.pressed){
 			ble_protocol_key[0] = ble_protocol_key[0]|ble_protocol_bitH0_7[keycode-KC_LEFT_CTRL];
 		}else{
@@ -486,11 +497,6 @@ bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd){
 		}
 		general_protocol_array_of_byte(DATA_TYPE_KEY,sizeof(ble_protocol_key),&ble_protocol_key[0]);
 	}else if(IS_SYSTEM(keycode)){
-		// if (_protocol_cmd.pressed){
-		// 	ble_protocol_system[0] = ble_protocol_bitH0_7[keycode-KC_SYSTEM_POWER];
-		// }else{
-		// 	if(keycode==getLastPressedKey(ble_protocol_system[0],3,KC_SYSTEM_POWER))ble_protocol_system[0]=0;
-		// }
 		if (_protocol_cmd.pressed){
 			ble_protocol_system[0] = ble_protocol_system[0]|ble_protocol_bitH0_7[keycode-KC_SYSTEM_POWER];
 		}else{
