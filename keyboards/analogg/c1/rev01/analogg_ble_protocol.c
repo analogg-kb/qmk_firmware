@@ -78,16 +78,16 @@ void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t 
 
 	uint8_t sum = 0, size = cmdDataBufferSize-1;
 	cmdDataBuffer[5] = seqId;
-	#ifdef CONSOLE_ENABLE
-        if(cmdDataBuffer[3]==0x01)uprintf("%5d Q:keys=",log_time);
-    #endif
+	// #ifdef CONSOLE_ENABLE
+    //     if(cmdDataBuffer[3]==0x01)uprintf("%5d Q:keys=",log_time);
+    // #endif
 	for (uint8_t i = 0; i < size; i++){
 		sum+=cmdDataBuffer[i];
-		if(i>=9 && cmdDataBuffer[3]==0x01)uprintf("%02x ",cmdDataBuffer[i]);
+		// if(i>=9 && cmdDataBuffer[3]==0x01)uprintf("%02x ",cmdDataBuffer[i]);
 	}
-	#ifdef CONSOLE_ENABLE
-        if(cmdDataBuffer[3]==0x01)uprintf("\n");
-    #endif
+	// #ifdef CONSOLE_ENABLE
+    //     if(cmdDataBuffer[3]==0x01)uprintf("\n");
+    // #endif
 	cmdDataBuffer[size] = sum;
 	send(&SD1,cmdDataBuffer,cmdDataBufferSize);
 	// sdWrite(&SD1, cmdDataBuffer, cmdDataBufferSize);

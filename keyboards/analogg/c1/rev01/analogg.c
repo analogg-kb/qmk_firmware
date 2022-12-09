@@ -185,6 +185,15 @@ uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
         } else {
             led_indicator.caps_lock = indicator_set_rgb(RGB_BLACK);
         }
+
+        if (is_tx_idle()){
+            analogg_ble_send_cmd(DATA_TYPE_STATE);
+            bt_time_count++;
+            if (bt_time_count>600){
+                bt_time_count=0;
+                analogg_ble_send_cmd_by_val(DATA_TYPE_BATTERY_LEVEL,(uint8_t)((int16_t)rsoc));
+            }
+        }
     }
     if (time_count%BLE_INDICATOR_200MS==0){
         if (state==ADV_WAIT_CONNECTING_ACTIVE){
@@ -211,14 +220,14 @@ uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
         }else if (rsoc>=70){
             led_indicator.battery_level = indicator_set_rgb(RGB_GREEN);
         }
-        if (is_tx_idle()){
-            analogg_ble_send_cmd(DATA_TYPE_STATE);
-            bt_time_count++;
-            if (bt_time_count>60){
-                bt_time_count=0;
-                analogg_ble_send_cmd_by_val(DATA_TYPE_BATTERY_LEVEL,(uint8_t)((int16_t)rsoc));
-            }
-        }
+        // if (is_tx_idle()){
+        //     analogg_ble_send_cmd(DATA_TYPE_STATE);
+        //     bt_time_count++;
+        //     if (bt_time_count>60){
+        //         bt_time_count=0;
+        //         analogg_ble_send_cmd_by_val(DATA_TYPE_BATTERY_LEVEL,(uint8_t)((int16_t)rsoc));
+        //     }
+        // }
 
         if (state==IDLE || state==ADV_WAIT_CONNECTING || state==ADV_WAIT_CONNECTING_INACTIVE){
             indicator_ble_on();
