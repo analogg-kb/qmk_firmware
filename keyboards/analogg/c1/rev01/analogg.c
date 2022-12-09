@@ -204,11 +204,11 @@ uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
         if (rsoc<0)rsoc=0;
         if (rsoc<10){
             led_indicator.battery_level = indicator_set_rgb(RGB_RED);
-        }else if (bl>=10 && bl<40){  //10-40
+        }else if (rsoc>=10 && rsoc<40){  //10-40
             led_indicator.battery_level = indicator_set_rgb(RGB_ORANGE);
-        }else if (bl>=40 && bl<70){   //40-70
+        }else if (rsoc>=40 && rsoc<70){   //40-70
             led_indicator.battery_level = indicator_set_rgb(RGB_YELLOW);
-        }else if (bl>=70){
+        }else if (rsoc>=70){
             led_indicator.battery_level = indicator_set_rgb(RGB_GREEN);
         }
         if (is_tx_idle()){
