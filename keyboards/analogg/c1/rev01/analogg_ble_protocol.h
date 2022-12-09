@@ -1,30 +1,16 @@
-/*
- * Copyright (c) 2018 Yaotian Feng
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// Copyright 2021 GuangJun.Wei (@wgj600)
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include "quantum.h"
 
 // DATA DIRECTION
-#define DATA_DIRECTION_QMK_BLE      0x09 
-#define DATA_DIRECTION_BLE_QMK      0x89 
+#define DATA_DIRECTION_QMK_BLE      0x09
+#define DATA_DIRECTION_BLE_QMK      0x89
 
 //PROTOCOL VERSION
-#define PROTOCOL_VERSION            0x01   
+#define PROTOCOL_VERSION            0x01
 
 //DATA TYPE
 #define DATA_TYPE_DEFAULT_KEY       0x00

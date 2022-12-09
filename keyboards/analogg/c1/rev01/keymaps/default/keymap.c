@@ -1,3 +1,6 @@
+// Copyright 2021 Jaypei (jaypei97159@gmail.com)
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include QMK_KEYBOARD_H
 #include "analogg.h"
 

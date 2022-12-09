@@ -1,18 +1,5 @@
-/* Copyright 2021 OpenAnnePro community
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// Copyright 2021 GuangJun.Wei (@wgj600)
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include QMK_KEYBOARD_H
 
@@ -39,12 +26,12 @@ const matrix_row_t matrix_mask[] = {
 };
 
 bool            isInit                      = false;
-bool            turn_off_is_rgb_enabled     = false;  
+bool            turn_off_is_rgb_enabled     = false;
 bool            is_usb_suspended            = false;
 
-bool            isChrg                      = false;  
+bool            isChrg                      = false;
 uint8_t         chrgCount                   = 0;
-float           rsoc                        = 0;         
+float           rsoc                        = 0;
 
 bool            custom_pressed              = false;
 uint16_t        custom_keycode              = KC_NO;
@@ -57,7 +44,7 @@ uint16_t        log_time                    = 0;
 #define SLEEP_RGB_ENBLE_OFF         62
 uint16_t        sleep_pressed_time          = 0;
 
-protocol_cmd    pop_protocol_cmd            = {0}; 
+protocol_cmd    pop_protocol_cmd            = {0};
 
 _ble_state_led  ble_state_led               = BLE_LED_INDICATOR;
 _led_indicator  led_indicator               = {.power={RGB_BLACK},.ble={RGB_BLACK},.caps_lock={RGB_BLUE},.battery_level={RGB_BLACK}};
@@ -82,7 +69,7 @@ static const SerialConfig ble_uart_config = {
 //     chThdSleepMilliseconds(10);   //TODO WAIT UART SEND END
 //   }
 // }
-   
+
 bool send(SerialDriver *sdp, const uint8_t* source, const size_t size) {
     bool success = (size_t)sdWriteTimeout(sdp, source, size, TIME_MS2I(100)) == size;
     return success;
@@ -96,11 +83,11 @@ bool receive(SerialDriver *sdp, uint8_t* destination, const size_t size) {
 /* --------------------------- qmk function------------------------------ */
 void board_init(void){
 #ifdef ENABLE_SWDP
-    AFIO->MAPR &= ~AFIO_MAPR_SWJ_CFG_Msk;     
-    AFIO->MAPR|=AFIO_MAPR_SWJ_CFG_JTAGDISABLE;  //disable JTAG enable SWD    
-#else 
-    AFIO->MAPR &= ~AFIO_MAPR_SWJ_CFG_Msk;     
-    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_DISABLE_Msk; //disable JTAG and SWD 
+    AFIO->MAPR &= ~AFIO_MAPR_SWJ_CFG_Msk;
+    AFIO->MAPR|=AFIO_MAPR_SWJ_CFG_JTAGDISABLE;  //disable JTAG enable SWD
+#else
+    AFIO->MAPR &= ~AFIO_MAPR_SWJ_CFG_Msk;
+    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_DISABLE_Msk; //disable JTAG and SWD
 #endif
 }
 
@@ -138,8 +125,8 @@ void indicator_ble_on(void){
     }
 }
 
-static uint16_t time_count = 0; 
-static uint16_t bt_time_count = 0; 
+static uint16_t time_count = 0;
+static uint16_t bt_time_count = 0;
 uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
     if (is_usb_suspended && !readPin(IS_BLE)){
         led_indicator.power         = indicator_set_rgb(RGB_BLACK);
@@ -159,14 +146,14 @@ uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
         case TX_RESTART:  analogg_ble_cmd_tx(++mSeqId); break;
         default:          ble_send_state++;             break;
     }
-    
+
     uint8_t state = ble_tunnel_state.list[ble_tunnel_state.tunnel];
 
     time_count++;
     if (time_count%BLE_INDICATOR_100MS==0){
 
-        if (!readPin(IS_BLE))ble_state_led = BLE_LED_INDICATOR;  //Turn on RGB matrix 
-        
+        if (!readPin(IS_BLE))ble_state_led = BLE_LED_INDICATOR;  //Turn on RGB matrix
+
         if (state==CONNECTED || state==CONNECTED_AND_ACTIVE) indicator_ble_on();
 
         //POWER LED state
@@ -191,41 +178,41 @@ uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
         }else{
             led_indicator.power = indicator_set_rgb(RGB_WHITE);
         }
-        
+
         //CAPS_LOCK LED state
         if (host_keyboard_led_state().caps_lock) {
             led_indicator.caps_lock = indicator_set_rgb(RGB_WHITE);
         } else {
             led_indicator.caps_lock = indicator_set_rgb(RGB_BLACK);
         }
-    } 
+    }
     if (time_count%BLE_INDICATOR_200MS==0){
         if (state==ADV_WAIT_CONNECTING_ACTIVE){
             indicator_ble_on();
         }
-    } 
+    }
     if (time_count%BLE_INDICATOR_400MS==0){
         if (state==ADV_WAIT_CONNECTING_ACTIVE){
-            led_indicator.ble = indicator_set_rgb(RGB_BLACK); 
+            led_indicator.ble = indicator_set_rgb(RGB_BLACK);
         }
-    } 
+    }
     if (time_count%BLE_INDICATOR_1S==0){
         //BATTERY LEVEL LED state
         uint16_t bl = analogReadPin(BATTERY_LEVEL_PORT);
         rsoc = ((bl-BATTERY_RSOC_0)/BATTERY_RSOC_AREA) * 100.00f;
         if (rsoc>100)rsoc=100;
         if (rsoc<0)rsoc=0;
-        if (rsoc<10){         
+        if (rsoc<10){
             led_indicator.battery_level = indicator_set_rgb(RGB_RED);
         }else if (bl>=10 && bl<40){  //10-40
             led_indicator.battery_level = indicator_set_rgb(RGB_ORANGE);
         }else if (bl>=40 && bl<70){   //40-70
             led_indicator.battery_level = indicator_set_rgb(RGB_YELLOW);
-        }else if (bl>=70){                        
+        }else if (bl>=70){
             led_indicator.battery_level = indicator_set_rgb(RGB_GREEN);
-        }   
+        }
         if (is_tx_idle()){
-            analogg_ble_send_cmd(DATA_TYPE_STATE);  
+            analogg_ble_send_cmd(DATA_TYPE_STATE);
             bt_time_count++;
             if (bt_time_count>60){
                 bt_time_count=0;
@@ -234,7 +221,7 @@ uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
         }
 
         if (state==IDLE || state==ADV_WAIT_CONNECTING || state==ADV_WAIT_CONNECTING_INACTIVE){
-            indicator_ble_on(); 
+            indicator_ble_on();
         }
 
         pressed_timeout_turn_off_led();
@@ -247,7 +234,7 @@ uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
         }
         time_count = 0;
     }
-    
+
     if (is_tx_idle()) // skip uart.
         rgblite_setrgb(led_indicator);
 
@@ -263,7 +250,7 @@ void pressed_timeout_turn_off_led(void){
         if (sleep_pressed_time==SLEEP_NO_PRESSED_TIMEOUT){
             if (rgb_matrix_is_enabled()){
                 sleep_pressed_time = SLEEP_RGB_ENBLE_ON;  // on
-                rgb_matrix_disable_noeeprom(); 
+                rgb_matrix_disable_noeeprom();
             }else{
                 sleep_pressed_time = SLEEP_RGB_ENBLE_OFF;   //off
             }
@@ -281,40 +268,40 @@ void pressed_turn_on_led(void){
 
 void ble_state_show_by_rgb_matrix(uint8_t index,uint8_t state){
     switch (state){
-        case IDLE:      //always bright                          
-            rgb_matrix_set_color(index, RGB_RED);      
+        case IDLE:      //always bright
+            rgb_matrix_set_color(index, RGB_RED);
             break;
-        case ADV_WAIT_CONNECTING: //slow blink           
+        case ADV_WAIT_CONNECTING: //slow blink
             if (time_count%BLE_INDICATOR_2S<BLE_INDICATOR_1S){
-                rgb_matrix_set_color(index, RGB_YELLOW);   
+                rgb_matrix_set_color(index, RGB_YELLOW);
             }else{
-                rgb_matrix_set_color(index, RGB_BLACK);   
+                rgb_matrix_set_color(index, RGB_BLACK);
             }
-            break;   
-        case ADV_WAIT_CONNECTING_ACTIVE:   //quick blink  
+            break;
+        case ADV_WAIT_CONNECTING_ACTIVE:   //quick blink
             if (time_count%BLE_INDICATOR_400MS<BLE_INDICATOR_200MS){
-                rgb_matrix_set_color(index, RGB_YELLOW);   
+                rgb_matrix_set_color(index, RGB_YELLOW);
             }else{
-                rgb_matrix_set_color(index, RGB_BLACK);   
+                rgb_matrix_set_color(index, RGB_BLACK);
             }
-        break; 
+        break;
         case ADV_WAIT_CONNECTING_INACTIVE:      //slow blink
             if (time_count%BLE_INDICATOR_2S<BLE_INDICATOR_1S){
-                rgb_matrix_set_color(index, RGB_YELLOW);   
+                rgb_matrix_set_color(index, RGB_YELLOW);
             }else{
-                rgb_matrix_set_color(index, RGB_BLACK);   
+                rgb_matrix_set_color(index, RGB_BLACK);
             }
-        break;  
-        case CONNECTED:  //always bright                   
-                rgb_matrix_set_color(index, RGB_YELLOW);   
-        break;  
-        case CONNECTED_AND_ACTIVE:          
-            rgb_matrix_set_color(index, RGB_BLUE);  
+        break;
+        case CONNECTED:  //always bright
+                rgb_matrix_set_color(index, RGB_YELLOW);
+        break;
+        case CONNECTED_AND_ACTIVE:
+            rgb_matrix_set_color(index, RGB_BLUE);
 
             if (last_save_tunnel!=tunnel){
                 last_save_tunnel = tunnel;
-                eeprom_write_byte(EE_ANALOGG_LINK_ID, tunnel); 
-            }   
+                eeprom_write_byte(EE_ANALOGG_LINK_ID, tunnel);
+            }
         break;
         default:break;
     }
@@ -342,19 +329,19 @@ bool rgb_matrix_indicators_kb(void) {
 // }
 
 void long_pressed_event(void){
-    uint16_t time = 0; 
+    uint16_t time = 0;
     if (custom_keycode>=BT_TN1 && custom_keycode<=BT_FTY){
         if (!custom_pressed){
             last_keycode = KC_NO;
             return;
         }
-           
+
         if (last_keycode!=custom_keycode){
             last_keycode = custom_keycode;
             custom_pressed_long_time = timer_read();
             return;
         }
-        
+
         time = timer_read()>custom_pressed_long_time ? (timer_read()-custom_pressed_long_time) : (65535-custom_pressed_long_time)+timer_read();
         if (time>=LONG_PRESSED_TIME && last_keycode != KC_NO){
             //uprintf(" BLE time---: %d  0x%04X\n", time,custom_keycode);
@@ -367,7 +354,7 @@ void long_pressed_event(void){
                 // case BT_TN6: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 6);break;
                 // case BT_TN7: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 7);break;
                 // case BT_TN8: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 8);break;
-                case BT_FTY: 
+                case BT_FTY:
                     analogg_ble_send_cmd(DATA_TYPE_DEFAULT);
                     ble_state_led = BLE_LED_KEY_ALL;
                     analogg_ble_send_cmd(DATA_TYPE_STATE);
@@ -385,7 +372,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (!readPin(IS_BLE)){
         #ifdef CONSOLE_ENABLE
             uprintf("%5d Q:cable,kc=%04x pressed=%d\n",log_time,keycode,record->event.pressed);
-        #endif 
+        #endif
         return process_record_user(keycode, record);
     }
 
@@ -403,13 +390,13 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 case BT_TN2: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 2);break;
                 case BT_TN3: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 3);break;
                 case BT_TN4: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 4);break;
-                case BT_TN5: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 5);break;  
+                case BT_TN5: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 5);break;
                 // case BT_TN6: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 6);break;
                 // case BT_TN7: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 7);break;
-                // case BT_TN8: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 8);break; 
-                case BT_STATE:   
+                // case BT_TN8: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 8);break;
+                case BT_STATE:
                     ble_state_led = BLE_LED_KEY_ALL;
-                    analogg_ble_send_cmd(DATA_TYPE_STATE);break; 
+                    analogg_ble_send_cmd(DATA_TYPE_STATE);break;
                 default:break;
             }
         }
@@ -431,7 +418,7 @@ bool uart_tx_data_handle(void){
             analogg_ble_keycode_handle(pop_protocol_cmd);
         }else{
             analogg_ble_config_handle(pop_protocol_cmd);
-        } 
+        }
         return true;
     }
     return false;
@@ -452,7 +439,7 @@ void matrix_scan_kb(void) {
     /**********RGB_DISABLE_WHEN_USB_SUSPENDED***********/
     if (USB_DRIVER.state==USB_SUSPENDED){
         is_usb_suspended = true;
-        turn_off_is_rgb_enabled = rgb_matrix_is_enabled();  
+        turn_off_is_rgb_enabled = rgb_matrix_is_enabled();
         if(!readPin(IS_BLE) && turn_off_is_rgb_enabled){
             rgb_matrix_disable_noeeprom();
         }
@@ -463,15 +450,15 @@ void matrix_scan_kb(void) {
             is_usb_suspended = false;
         }
     }
- 
+
     matrix_scan_user();
-}                  
+}
 
 #ifdef DIP_SWITCH_MATRIX_GRID
 bool dip_switch_update_kb(uint8_t index, bool active) {
     if (!dip_switch_update_user(index, active)) { return false;}
     if (index == 0) {
-        default_layer_set(1UL << (active ? 2 : 0)); 
+        default_layer_set(1UL << (active ? 2 : 0));
     }
     return true;
 }
@@ -550,18 +537,18 @@ const is31_led PROGMEM g_is31_leds[RGB_MATRIX_LED_COUNT] = {
     {1, G_1,    H_1,    I_1},
     {1, G_2,    H_2,    I_2},
     {1, G_3,    H_3,    I_3},
-    {1, G_4,    H_4,    I_4},   
-    {1, G_5,    H_5,    I_5},     
-    {1, G_6,    H_6,    I_6},   
+    {1, G_4,    H_4,    I_4},
+    {1, G_5,    H_5,    I_5},
+    {1, G_6,    H_6,    I_6},
     {1, G_7,    H_7,    I_7},
-    {1, G_8,    H_8,    I_8},   
-    {1, G_9,    H_9,    I_9},   
-    {1, G_10,   H_10,   I_10}, 
-    {1, G_11,   H_11,   I_11}, 
-    {1, G_12,   H_12,   I_12},   
-    {1, G_13,   H_13,   I_13}, 
-    {1, G_14,   H_14,   I_14},  
-    {1, G_15,   H_15,   I_15}, 
+    {1, G_8,    H_8,    I_8},
+    {1, G_9,    H_9,    I_9},
+    {1, G_10,   H_10,   I_10},
+    {1, G_11,   H_11,   I_11},
+    {1, G_12,   H_12,   I_12},
+    {1, G_13,   H_13,   I_13},
+    {1, G_14,   H_14,   I_14},
+    {1, G_15,   H_15,   I_15},
 
     {1, D_1,    E_1,    F_1},
     {1, D_2,    E_2,    F_2},
@@ -575,9 +562,9 @@ const is31_led PROGMEM g_is31_leds[RGB_MATRIX_LED_COUNT] = {
     {1, D_10,   E_10,   F_10},
     {1, D_11,   E_11,   F_11},
     {1, D_12,   E_12,   F_12},
-    {1, D_13,   E_13,   F_13},  
-    {1, D_14,   E_14,   F_14},  
-    {1, D_15,   E_15,   F_15}, 
+    {1, D_13,   E_13,   F_13},
+    {1, D_14,   E_14,   F_14},
+    {1, D_15,   E_15,   F_15},
 
     {1, A_1,    B_1,    C_1},
     {1, A_2,    B_2,    C_2},
@@ -592,8 +579,8 @@ const is31_led PROGMEM g_is31_leds[RGB_MATRIX_LED_COUNT] = {
     {1, A_11,   B_11,   C_11},
     {1, A_12,   B_12,   C_12},
     {1, A_13,   B_13,   C_13},
-    {1, A_14,   B_14,   C_14},   
-    {1, A_15,   B_15,   C_15},  
+    {1, A_14,   B_14,   C_14},
+    {1, A_15,   B_15,   C_15},
 };
 
 led_config_t g_led_config = {
@@ -601,22 +588,22 @@ led_config_t g_led_config = {
 		{  0,       1,      2,      3,      4,      5,      6,      7,      8,      9,     10,     11,     12,      13,     14      },
 		{  15,     16,     17,     18,     19,     20,     21,     22,     23,     24,     25,     26,      27,     28,     29      },
 		{  30,     31,     32,     33,     34,     35,     36,     37,     38,     39,     40,     41,      42,     43,     44      },
-		{  45,     46,     47,     48,     49,     50,     51,     52,     53,     54,     55,     56,      57,     NO_LED, 59      }, 
-		{  60,     61,     62,     63,     64,     65,     66,     67,     68,     69,     70,     71,      NO_LED, 73,     NO_LED  },  
-		{  75,     76,     77,     NO_LED, NO_LED, NO_LED, 81,     NO_LED, NO_LED, 84,     85,     86,      87,     88,     89      }  
+		{  45,     46,     47,     48,     49,     50,     51,     52,     53,     54,     55,     56,      57,     NO_LED, 59      },
+		{  60,     61,     62,     63,     64,     65,     66,     67,     68,     69,     70,     71,      NO_LED, 73,     NO_LED  },
+		{  75,     76,     77,     NO_LED, NO_LED, NO_LED, 81,     NO_LED, NO_LED, 84,     85,     86,      87,     88,     89      }
 	},
 	{
 		{0,0},  {16, 0}, {32, 0}, {48, 0}, {64, 0}, {80, 0}, {96, 0}, {112, 0}, {128, 0}, {144, 0}, {160, 0}, {176, 0}, {192, 0}, {208, 0}, {224, 0},
-	    {0,13}, {16,13}, {32,13}, {48,13}, {64,13}, {80,13}, {96,13}, {112,13}, {128,13}, {144,13}, {160,13}, {176,13}, {192,13}, {208,13}, {224,13}, 
-	    {0,26}, {16,26}, {32,26}, {48,26}, {64,26}, {80,26}, {96,26}, {112,26}, {128,26}, {144,26}, {160,26}, {176,26}, {192,26}, {208,26}, {224,26},         
-	    {0,38}, {16,38}, {32,38}, {48,38}, {64,38}, {80,38}, {96,38}, {112,38}, {128,38}, {144,38}, {160,38}, {176,38}, {192,38}, {208,38}, {224,38}, 
+	    {0,13}, {16,13}, {32,13}, {48,13}, {64,13}, {80,13}, {96,13}, {112,13}, {128,13}, {144,13}, {160,13}, {176,13}, {192,13}, {208,13}, {224,13},
+	    {0,26}, {16,26}, {32,26}, {48,26}, {64,26}, {80,26}, {96,26}, {112,26}, {128,26}, {144,26}, {160,26}, {176,26}, {192,26}, {208,26}, {224,26},
+	    {0,38}, {16,38}, {32,38}, {48,38}, {64,38}, {80,38}, {96,38}, {112,38}, {128,38}, {144,38}, {160,38}, {176,38}, {192,38}, {208,38}, {224,38},
 	    {0,51}, {16,51}, {32,51}, {48,51}, {64,51}, {80,51}, {96,51}, {112,51}, {128,51}, {144,51}, {160,51}, {176,51}, {192,51}, {208,51}, {224,51},
-	    {0,64}, {16,64}, {32,64}, {48,64}, {64,64}, {80,64}, {96,64}, {112,64}, {128,64}, {144,64}, {160,64}, {176,64}, {192,64}, {208,64}, {224,64},  
+	    {0,64}, {16,64}, {32,64}, {48,64}, {64,64}, {80,64}, {96,64}, {112,64}, {128,64}, {144,64}, {160,64}, {176,64}, {192,64}, {208,64}, {224,64},
 	},
 	{
-		4,	  4,	4,	  4,    4,	  4,    4,    4,    4,    4,	4,	  4,    4,	  4,    4,	    
-		4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,    4,   
-		4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,    4,    
+		4,	  4,	4,	  4,    4,	  4,    4,    4,    4,    4,	4,	  4,    4,	  4,    4,
+		4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,    4,
+		4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,    4,
 		4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,    4,
 		4,	  4,    4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,	  4,	4,    4,    4,
 		4,	  4,	4,	  4,    4,	  4,    4,	  4,	4,    4,    4,    4,	4,    4,	4,

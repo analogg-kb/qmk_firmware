@@ -1,18 +1,5 @@
-/* Copyright 2021 OpenAnnePro community
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// Copyright 2021 GuangJun.Wei (@wgj600)
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include QMK_KEYBOARD_H
 
@@ -45,13 +32,13 @@ void push_cmd(uint8_t type, uint16_t keycode, bool pressed){
 			set_ble_work_state(WAIT_CONFIG_MODE);
 		}
 	}
-	
+
 	protocol_cmd protocol_cmd_new = {type,keycode,pressed};
 	bufferPush(protocol_cmd_new);
 }
 
 /**
- * @param dataType 		
+ * @param dataType
  * type
     0x01：Key
     0x02：Consumer key
@@ -65,7 +52,7 @@ void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t 
 	uint8_t offset=0, sum=0;
 	cmdDataBufferSize = 8;
 	if (bleData!=NULL){
-		cmdDataBufferSize += dataSize;	
+		cmdDataBufferSize += dataSize;
 	}
 	cmdDataBuffer[offset++] = 0x00;
 	cmdDataBuffer[offset++] = 0x55;
@@ -93,17 +80,17 @@ void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t 
 	cmdDataBuffer[5] = seqId;
 	#ifdef CONSOLE_ENABLE
         if(cmdDataBuffer[3]==0x01)uprintf("%5d Q:keys=",log_time);
-    #endif 
+    #endif
 	for (uint8_t i = 0; i < size; i++){
 		sum+=cmdDataBuffer[i];
 		if(i>=9 && cmdDataBuffer[3]==0x01)uprintf("%02x ",cmdDataBuffer[i]);
 	}
 	#ifdef CONSOLE_ENABLE
         if(cmdDataBuffer[3]==0x01)uprintf("\n");
-    #endif 
+    #endif
 	cmdDataBuffer[size] = sum;
 	send(&SD1,cmdDataBuffer,cmdDataBufferSize);
-	// sdWrite(&SD1, cmdDataBuffer, cmdDataBufferSize); 
+	// sdWrite(&SD1, cmdDataBuffer, cmdDataBufferSize);
  }
 
 #define INDEX_RESET 			-1
@@ -131,16 +118,16 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 	dataLen = data_package[6];
 	if(dataLen==0 || version!=PROTOCOL_VERSION)return false;
 	errCode = data_package[7];
-	
+
 	// uprintf(" mId=%d Id=%d err=%d %d\n",mSeqId,seqId,errCode,timer_read());
 	if (mSeqId!=seqId || errCode!=0){
 		#ifdef CONSOLE_ENABLE
             uprintf("%5d Q:errCode=%d\n",log_time,errCode);
-        #endif 
-		ble_send_state = TX_START;  
+        #endif
+		ble_send_state = TX_START;
 		return false;
 	}
-	
+
 	if (type==DATA_TYPE_KEY || type==DATA_TYPE_CONSUMER_KEY || type==DATA_TYPE_SYSTEM_CONTROL){
 		if (is_rgb_enabled){
 			rgb_matrix_enable_noeeprom();
@@ -149,16 +136,16 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 		}
 		set_ble_work_state(INPUT_MODE);
 
-		ble_send_state = TX_IDLE; 
+		ble_send_state = TX_IDLE;
 		return true;
 	}
-	
+
 	switch (type){
 		case DATA_TYPE_BATTERY_LEVEL:
 			break;
 		case DATA_TYPE_STATE:
 			/**
-			 * @brief 
+			 * @brief
 			 * dataLen = 0x0A  ble state
 			 * dataLen > 0x0A  ble state + log
 			 */
@@ -172,7 +159,7 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 					analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, tunnel);
 				}
 			}
-		
+
 			ble_tunnel_state.tunnel = data_package[8];
 			for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++){
 				ble_tunnel_state.list[i] = data_package[9+i];
@@ -190,9 +177,9 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 				}
 				uprintf("%5d B:%s",log_time,log_buffer);
 			}
-			
-			ble_send_state = TX_IDLE; 
-			return true;  
+
+			ble_send_state = TX_IDLE;
+			return true;
 		case DATA_TYPE_GET_TUNNEL_ID:
 			break;
 		case DATA_TYPE_SWITCH:
@@ -242,34 +229,34 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 
 void analogg_ble_resolve_protocol(uint8_t byte){
 	// #ifdef CONSOLE_ENABLE
-	// 	uprintf("%02x ", byte);	// uprintf("%c", toupper(byte)); 
-	// #endif 
+	// 	uprintf("%02x ", byte);	// uprintf("%c", toupper(byte));
+	// #endif
     if (pos==INDEX_RESET){
 		resetGetData();
 	}
 	pos++;
 	protocolData[pos]=byte;
 	if(pos==0){
-		if (byte!=0x00)pos=INDEX_RESET;    
+		if (byte!=0x00)pos=INDEX_RESET;
 	}else if (pos==1){
 		if (byte!=0x55)pos=INDEX_RESET;
 	}else if (pos==2){
 		if (byte!=DATA_DIRECTION_BLE_QMK)pos=INDEX_RESET;    //89
-	}else if (pos==3){   
+	}else if (pos==3){
         //type
-	}else if (pos==4){   
+	}else if (pos==4){
         //version
-	}else if (pos==5){  
+	}else if (pos==5){
 		if (byte!=mSeqId){
 			uprintf("%5d Q:id error,id=%02x seqId=%02x\n",log_time,byte,mSeqId);
 			pos=INDEX_RESET;    //mSeqId
 		}
 	}else if (pos==6){
 		dataLen = byte;
-	}else if (pos>6 && pos<(dataLen+7)){		
+	}else if (pos>6 && pos<(dataLen+7)){
 		//getdata
 	}else if (pos==(dataLen+7)){
-        checkSum = 0;		
+        checkSum = 0;
         for (uint8_t i = 0; i < pos; i++) checkSum+=protocolData[i];
 		if (byte!=checkSum)
             pos=INDEX_RESET;
@@ -288,8 +275,8 @@ void analogg_ble_resolve_protocol(uint8_t byte){
 
 typedef struct _circle_buffer{
     uint16_t head_pos;             //缓冲区头部位置
-    uint16_t tail_pos;             //缓冲区尾部位置   
-    protocol_cmd circle_buffer[PROTOCOL_BUFFER_SIZE];  
+    uint16_t tail_pos;             //缓冲区尾部位置
+    protocol_cmd circle_buffer[PROTOCOL_BUFFER_SIZE];
 }circle_buffer;
 
 circle_buffer buffer;
@@ -330,12 +317,12 @@ unsigned char bufferPop(protocol_cmd *_buf){
     }
 }
 
-void bufferPush(protocol_cmd _buf){   
+void bufferPush(protocol_cmd _buf){
 	bufferCount++;
 	if(bufferCount>=PROTOCOL_BUFFER_SIZE){
 		bufferCount=PROTOCOL_BUFFER_SIZE;
 	}
-		
+
     buffer.circle_buffer[buffer.tail_pos]=_buf; //从尾部追加
     if(++buffer.tail_pos>=PROTOCOL_BUFFER_SIZE){          //尾节点偏移
         buffer.tail_pos=0;                      //大于数组最大长度 制零 形成环形队列
@@ -344,7 +331,7 @@ void bufferPush(protocol_cmd _buf){
 				buffer.head_pos=0;
 			}
 		}    //如果尾部节点追到头部节点 则修改头节点偏移位置丢弃早期数据
-	}        	
+	}
 }
 
 
@@ -365,18 +352,18 @@ static uint16_t ble_protocol_consumer_byte6[8] = {
     KC_MEDIA_STOP,  KC_MEDIA_PREV_TRACK,   KC_MEDIA_NEXT_TRACK, KC_MEDIA_SELECT};
 
 static uint16_t ble_protocol_consumer_byte7[8] = {
-    AL_LOCAL_BROWSER,       KC_CALCULATOR,     AC_PROPERTIES,    
+    AL_LOCAL_BROWSER,       KC_CALCULATOR,     AC_PROPERTIES,
     0,  // TODO bit3 AC_PROPERTIES = Record
-    KC_MEDIA_FAST_FORWARD,  KC_MEDIA_REWIND,   
-    0,  // TODO bit6 Media_Select_Program_Guide,           
+    KC_MEDIA_FAST_FORWARD,  KC_MEDIA_REWIND,
+    0,  // TODO bit6 Media_Select_Program_Guide,
     0}; // TODO bit7 Microphone};
 
 static uint16_t ble_protocol_consumer_byte8[8] = {
     KC_PWR,    0,     0,    0,
-    0,  // TODO bit4 AL Screen Saver     
+    0,  // TODO bit4 AL Screen Saver
     KC_MEDIA_EJECT,   0,    0};
 
-//-------------------------------------------------------------------------------------------------------------------------	
+//-------------------------------------------------------------------------------------------------------------------------
 void clear_keycode_buffer(void){
 	memsets(ble_protocol_key,0,8);
 	memsets(ble_protocol_consumer,0,4);
@@ -456,13 +443,13 @@ bool analogg_ble_config_handle(protocol_cmd _protocol_cmd){
 //     uint8_t i;
 //     if (size>8)return 0;
 //     for(i=0; i<size; i++)if(bufferByte==ble_protocol_bitH0_7[i]) return baseKeycode+i;
-//     return 0; 
+//     return 0;
 // }
 
 bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd){
 
 	if (!is_ble_work_state_input())set_ble_work_state(WAIT_INPUT_MODE);
-	
+
     uint8_t i = 0, j = 0;
     uint16_t keycode = _protocol_cmd.value;
 	if (IS_KEY(keycode)){
@@ -473,13 +460,13 @@ bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd){
 					isExist = true;
 					continue;
 				}
-				
+
 				if(isExist && ble_protocol_key[i]==keycode){ //if it exists, clear it;
 					ble_protocol_key[i] = 0;
 				}
 
 				if (ble_protocol_key[i]==0){
-					ble_protocol_key[i]=keycode; 
+					ble_protocol_key[i]=keycode;
 					break;
 				}
 			}else{
@@ -487,8 +474,8 @@ bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd){
 					ble_protocol_key[i] = 0;
 				}
 			}
-		}  
-		general_protocol_array_of_byte(DATA_TYPE_KEY,sizeof(ble_protocol_key),&ble_protocol_key[0]);  
+		}
+		general_protocol_array_of_byte(DATA_TYPE_KEY,sizeof(ble_protocol_key),&ble_protocol_key[0]);
 	}else if(IS_MOD(keycode)){
 		if (_protocol_cmd.pressed){
 			ble_protocol_key[0] = ble_protocol_key[0]|ble_protocol_bitH0_7[keycode-KC_LEFT_CTRL];
@@ -503,7 +490,7 @@ bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd){
 			ble_protocol_system[0] = ble_protocol_system[0]&(~ble_protocol_bitH0_7[keycode-KC_SYSTEM_POWER]);
 		}
 		general_protocol_array_of_byte(DATA_TYPE_SYSTEM_CONTROL,sizeof(ble_protocol_system),&ble_protocol_system[0]);
-	}else if (IS_CONSUMER(keycode)){ 
+	}else if (IS_CONSUMER(keycode)){
 		for(j=0; j<4; j++){
 			if (j == 0){
 				for(i=0; i<8; i++)if(keycode==ble_protocol_consumer_byte5[i]){
@@ -525,8 +512,8 @@ bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd){
 					ble_protocol_consumer[j]=0;
 					if (_protocol_cmd.pressed)ble_protocol_consumer[j]=ble_protocol_bitH0_7[i];
 				}
-			} 
-		} 
+			}
+		}
 		general_protocol_array_of_byte(DATA_TYPE_CONSUMER_KEY,sizeof(ble_protocol_consumer),&ble_protocol_consumer[0]);
 	} else {
 		return false;

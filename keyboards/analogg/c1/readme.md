@@ -6,7 +6,7 @@
 
 *Analogg, Aluminum Body Wireless QMK&VIA Mechanical Keyboard*
 
-* Keyboard Maintainer: [Jaypei](https://github.com/jaypei), [GuangJun Wei](https://github.com/wgj600)
+* Keyboard Maintainer: [Jaypei](https://github.com/jaypei), [GuangJun.Wei](https://github.com/wgj600)
 * Hardware Supported: *Analogg C1, STM32F103*
 * Hardware Availability: *[Analogg](https://theanalogg.com)*
 

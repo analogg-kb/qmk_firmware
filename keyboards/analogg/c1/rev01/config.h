@@ -1,11 +1,12 @@
 // Copyright 2022 jaypei (@jaypei)
 // SPDX-License-Identifier: GPL-2.0-or-later
-#pragma once 
+
+#pragma once
 
 /* enable sw_dp */
-// #ifndef ENABLE_SWDP       
+// #ifndef ENABLE_SWDP
 //     #define ENABLE_SWDP
-// #endif  
+// #endif
 
 //  #define DEBUG_MATRIX_SCAN_RATE
 
@@ -65,7 +66,7 @@
     #define DRIVER_COUNT 2
     #define DRIVER_ADDR_1 0b1010000
     #define DRIVER_ADDR_2 0b1010011
-    
+
     #define I2C1_CLOCK_SPEED 400000
     #define I2C1_DUTY_CYCLE FAST_DUTY_CYCLE_16_9
 

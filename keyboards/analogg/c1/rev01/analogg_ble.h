@@ -1,72 +1,59 @@
-/*
-    Copyright (C) 2020 Yaotian Feng, Codetector<codetector@codetector.cn>
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+// Copyright 2021 GuangJun.Wei (@wgj600)
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include "quantum.h"
 #include "analogg_ble_protocol.h"
 
-#ifndef BLE_TUNNEL_NUM        
-#   define BLE_TUNNEL_NUM        5  
+#ifndef BLE_TUNNEL_NUM
+#   define BLE_TUNNEL_NUM        5
 #endif
 
-/* --------------------------------- GPIO ------------------------------------ */      
+/* --------------------------------- GPIO ------------------------------------ */
 #ifndef BLE_RST
-#    define BLE_RST         A2  
+#    define BLE_RST         A2
 #endif
 
 #ifndef IS_BLE
-#   define IS_BLE            B8  
+#   define IS_BLE            B8
 #endif
 #ifndef IS_CHRG
 #   define IS_CHRG             A6  // 1 = full 0 change  1 0  no battery
 #endif
 #ifndef PIO11_WAKEUP
-#   define PIO11_WAKEUP        A5  //input(wakeup control): use it with (AT+SLEEPMODE!=0)  
-#endif  
+#   define PIO11_WAKEUP        A5  //input(wakeup control): use it with (AT+SLEEPMODE!=0)
+#endif
 
 #define EE_ANALOGG_LINK_ID  (uint8_t *)128
 
 extern uint8_t tunnel;
 extern uint8_t last_save_tunnel;
 
-extern bool    is_rgb_enabled; 
+extern bool    is_rgb_enabled;
 
 typedef enum {
     TX_IDLE     = 0,
-    TX_START    = 1,  
-    TX_TIMEOUT  = 100, 
-    TX_RESTART  = 255           
+    TX_START    = 1,
+    TX_TIMEOUT  = 100,
+    TX_RESTART  = 255
 } _ble_send_state;
 extern _ble_send_state ble_send_state;
 
 typedef enum {
     INPUT_MODE = 0,
-    WAIT_INPUT_MODE,  
-    CONFIG_MODE, 
-    WAIT_CONFIG_MODE           
+    WAIT_INPUT_MODE,
+    CONFIG_MODE,
+    WAIT_CONFIG_MODE
 } _ble_work_state;
 extern _ble_work_state ble_work_state;
 
 typedef enum {
     IDLE = 0,
-    ADV_WAIT_CONNECTING,  
-    ADV_WAIT_CONNECTING_ACTIVE, 
-    ADV_WAIT_CONNECTING_INACTIVE,            
-    CONNECTED, 
+    ADV_WAIT_CONNECTING,
+    ADV_WAIT_CONNECTING_ACTIVE,
+    ADV_WAIT_CONNECTING_INACTIVE,
+    CONNECTED,
     CONNECTED_AND_ACTIVE,
 } ble_state;
 
@@ -85,7 +72,7 @@ void analogg_ble_send_cmd_by_id(uint8_t type, uint8_t tunnel_id);
 void analogg_ble_send_cmd_by_val(uint8_t type, uint8_t val);
 
 void analogg_ble_reset_leds(void);
-void analogg_ble_keyboard(void); 
+void analogg_ble_keyboard(void);
 void analogg_ble_mouse(void);
 void analogg_ble_system(void);
 void analogg_ble_consumer(void);

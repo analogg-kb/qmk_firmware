@@ -1,3 +1,5 @@
+// Copyright 2021 GuangJun.Wei (@wgj600)
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "led_indicator.h"
 #include "ws2812.c"
@@ -23,7 +25,7 @@ LED_TYPE indicator_set_rgb(uint8_t r, uint8_t g, uint8_t b){
     if (b==255){
         led.b = RGBLIGHT_LIMIT_VAL;
     }
-#endif 
+#endif
     return led;
 }
 

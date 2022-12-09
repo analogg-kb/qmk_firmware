@@ -1,15 +1,5 @@
-/*
-    Copyright (C) 2020 Yaotian Feng, Codetector<codetector@codetector.cn>
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-        http://www.apache.org/licenses/LICENSE-2.0
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
+// Copyright 2021 GuangJun.Wei (@wgj600)
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "analogg.h"
 #include "analogg_ble.h"
@@ -19,7 +9,7 @@
 uint8_t tunnel                      = 1;
 uint8_t last_save_tunnel            = 1;
 
-bool    is_rgb_enabled              = true;    // TODO TEST  
+bool    is_rgb_enabled              = true;    // TODO TEST
 
 _ble_work_state     ble_work_state   = INPUT_MODE;
 _ble_send_state     ble_send_state   = TX_IDLE;
@@ -60,8 +50,8 @@ void analogg_ble_send_cmd_by_val(uint8_t type, uint8_t val){
     push_cmd(type,val,false);
 }
 
-void analogg_ble_startup(void) { 
-    
+void analogg_ble_startup(void) {
+
     setPinInput(IS_BLE);
 
     setPinInput(IS_CHRG);
@@ -91,5 +81,5 @@ void analogg_ble_reset_leds(){
 }
 
 void analogg_ble_mouse(){
-    
-} 
+
+}

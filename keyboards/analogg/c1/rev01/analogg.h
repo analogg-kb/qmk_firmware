@@ -1,19 +1,5 @@
-/*
- * Copyright (c) 2018 Yaotian Feng
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// Copyright 2021 GuangJun.Wei (@wgj600)
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -25,7 +11,7 @@ enum layers{
     WIN_BASE,
     WIN_FN,
     MAC_BASE,
-    MAC_FN,          
+    MAC_FN,
 };
 
 
@@ -36,14 +22,14 @@ enum keyboard_keycodes   {
     #else
         BT_TUNNEL1 = SAFE_RANGE,
     #endif
-    BT_TUNNEL2,     
-    BT_TUNNEL3,       
-    BT_TUNNEL4,       
-    BT_TUNNEL5,    
-    // BT_TUNNEL6,    
-    // BT_TUNNEL7,    
-    // BT_TUNNEL8,    
-    BT_STATE,  
+    BT_TUNNEL2,
+    BT_TUNNEL3,
+    BT_TUNNEL4,
+    BT_TUNNEL5,
+    // BT_TUNNEL6,
+    // BT_TUNNEL7,
+    // BT_TUNNEL8,
+    BT_STATE,
     BT_DEFAULT,
 };
 
@@ -77,8 +63,8 @@ extern uint16_t log_time;
 
 typedef enum {
     BLE_LED_KEY_ONE= 0,
-    BLE_LED_KEY_ALL,  
-    BLE_LED_INDICATOR, 
+    BLE_LED_KEY_ALL,
+    BLE_LED_INDICATOR,
 } _ble_state_led;
 extern _ble_state_led ble_state_led;
 
