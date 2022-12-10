@@ -16,6 +16,8 @@
 #include "config.h"
 #include "eeprom.h"
 #include "keycode_config.h"
+
+// Disable the DIP switch key
 const matrix_row_t matrix_mask[] = {
     0b111111111111111,
     0b111111111111111,

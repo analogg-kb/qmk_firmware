@@ -14,19 +14,21 @@ void rgblite_setrgb(_led_indicator led_indicator) {
 }
 
 LED_TYPE indicator_set_rgb(uint8_t r, uint8_t g, uint8_t b){
-    LED_TYPE led = {.r=g,.g=r,.b=b};   //rgb.gbr.brg...
 #ifdef RGBLIGHT_LIMIT_VAL
-    if (r==255){
-        led.g = RGBLIGHT_LIMIT_VAL;    //rgb.gbr.brg...
-    }
-    if (g==255){
-        led.r = RGBLIGHT_LIMIT_VAL;
-    }
-    if (b==255){
-        led.b = RGBLIGHT_LIMIT_VAL;
-    }
+    r = r / 255 * RGBLIGHT_LIMIT_VAL;
+    g = g / 255 * RGBLIGHT_LIMIT_VAL;
+    b = b / 255 * RGBLIGHT_LIMIT_VAL;
 #endif
-    return led;
+#if (RGB_INDICATOR_ORDER == RGB_INDICATOR_ORDER_GRB)
+    uint8_t tmp;
+    tmp = r;
+    r = g;
+    g = tmp;
+#elif (RGB_INDICATOR_ORDER == RGB_INDICATOR_ORDER_GRB)
+    uint8_t tmp;
+    tmp = r;
+    r = b;
+    b = tmp;
+#endif
+    return (LED_TYPE){ .r=r, .g=g, .b=b };
 }
-
-

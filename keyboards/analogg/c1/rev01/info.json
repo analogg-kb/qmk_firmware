@@ -4,6 +4,7 @@
     "maintainer": "Jaypei, GuangJun.Wei",
     "bootloader": "stm32duino",
     "diode_direction": "COL2ROW",
+    "debounce": 4,
     "features": {
         "bootmagic": true,
         "command": false,
@@ -16,7 +17,8 @@
         "deferred_exec": true,
         "encoder": true,
         "dip_switch": true,
-        "rgb_matrix": true
+        "rgb_matrix": true,
+        "bluetooth": true
     },
     "matrix_pins": {
         "cols": [ "A7", "B0", "B1", "B2", "B10", "B11", "B12", "B13", "A13", "A14", "A15", "B3", "B4", "B5", "B9"],
