@@ -3,60 +3,43 @@
 
 #pragma once
 
-/* enable sw_dp */
-// #ifndef ENABLE_SWDP
-//     #define ENABLE_SWDP
-// #endif
+// Debug
+#define DEBUG_MATRIX_SCAN_RATE
 
-//  #define DEBUG_MATRIX_SCAN_RATE
-
-/* Set 0 if debouncing isn't needed */
-#define DEBOUNCE 4
-
-/* Encoder used pins */
+// Encoder config
 #define ENCODERS_PAD_A { A0 }
 #define ENCODERS_PAD_B { A1 }
-/* Specifies the number of pulses the encoder registers between each detent */
 #define ENCODER_RESOLUTION 4
 #define ENCODERS 1
 // Note:  array is { col, row )
 #define ENCODERS_CW_KEY  { { 7, 5 } }
 #define ENCODERS_CCW_KEY { { 8, 5 } }
 
-/* DIP switch */
+// DIP switch config
 #define DIP_SWITCH_MATRIX_GRID  { {5,5} }
-
-/* Disable DIP switch in matrix data */
+// Disable DIP switch in matrix data
 #define MATRIX_MASKED
 
+// Battery config
 #define BATTERY_LEVEL_PORT A4
 
-//WS2812
+// RGB indicator config
+// WS2812
 #define RGB_DI_PIN A3
 #define RGBLED_NUM 4
 #define RGBLIGHT_LIMIT_VAL 64
+#define RGB_INDICATOR_ORDER_RGB 0
+#define RGB_INDICATOR_ORDER_GRB 1
+#define RGB_INDICATOR_ORDER_BGR 2
+#define RGB_INDICATOR_ORDER RGB_INDICATOR_ORDER_GRB
 
+// RGB matrix config
 #ifdef RGB_MATRIX_ENABLE
-    /* Scan phase of led driver set as MSKPHASE_9CHANNEL(defined as 0x03 in CKLED2001.h) */
-    // #define PHASE_CHANNEL MSKPHASE_9CHANNEL
-
     /* Set the maxium brightness as 192 in order to limit the current to 450mA */
     #define RGB_MATRIX_MAXIMUM_BRIGHTNESS 192  // 14*8, 8 = RGB_MATRIX_VAL_STEP
 
-    /* Enable caps-lock LED */
-    // #define CAPS_LOCK_LED_INDEX 45
-
-    /* Total size of the EEPROM storage in bytes */
-    // #define TRANSIENT_EEPROM_SIZE 1024
-
-    // #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
-    // #define RGB_MATRIX_KEYPRESSES
-    // #define RGB_MATRIX_KEYRELEASES
-    // #define RGB_MATRIX_LED_PROCESS_LIMIT 1
     #define RGB_MATRIX_LED_PROCESS_LIMIT (RGB_MATRIX_LED_COUNT + 4) / 5
     #define RGB_MATRIX_LED_FLUSH_LIMIT 16
-
-    // #define EECONFIG_RGB_MATRIX (uint32_t *)28
 
     /* key matrix size */
     #define MATRIX_ROWS 6
@@ -74,9 +57,6 @@
     #define DRIVER_1_LED_TOTAL 45
     #define DRIVER_2_LED_TOTAL 45
     #define RGB_MATRIX_LED_COUNT (DRIVER_1_LED_TOTAL + DRIVER_2_LED_TOTAL)
-
-    /* Disable RGB lighting when PC is in suspend */
-    // #define RGB_DISABLE_WHEN_USB_SUSPENDED
 
     /* Allow VIA to edit lighting */
     #ifdef VIA_ENABLE
