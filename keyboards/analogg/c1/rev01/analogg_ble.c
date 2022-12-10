@@ -75,8 +75,9 @@ void analogg_ble_disconnect(void) {
 void analogg_ble_reset_leds(){
     if (is_ble_work_state()==WAIT_CONFIG_MODE){
         for (uint8_t i = 0; i < BLE_TUNNEL_NUM ; i++) ble_tunnel_state.list[i]=IDLE;  //reset leds state
-        is_rgb_enabled = rgb_matrix_is_enabled();   // Save the current rgb state
+        // is_rgb_enabled = rgb_matrix_is_enabled();   // Save the current rgb state
         rgb_matrix_enable_noeeprom();               // Turn on the rgb light
+        uprintf("rgb_matrix_enable_noeeprom3\n");
     }
 }
 

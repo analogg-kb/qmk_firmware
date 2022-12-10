@@ -405,6 +405,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 // case BT_TN8: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 8);break;
                 case BT_STATE:
                     ble_state_led = BLE_LED_KEY_ALL;
+                    rgb_matrix_enable_noeeprom();               // Turn on the rgb light
                     analogg_ble_send_cmd(DATA_TYPE_STATE);break;
                 default:break;
             }

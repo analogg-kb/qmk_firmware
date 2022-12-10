@@ -129,11 +129,20 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 	}
 
 	if (type==DATA_TYPE_KEY || type==DATA_TYPE_CONSUMER_KEY || type==DATA_TYPE_SYSTEM_CONTROL){
-		if (is_rgb_enabled){
-			rgb_matrix_enable_noeeprom();
-		}else{
-			rgb_matrix_disable_noeeprom();
-		}
+
+		
+		if (is_ble_work_state()==CONFIG_MODE){
+        	rgb_matrix_enable_noeeprom();            // Turn on the rgb light
+    	}
+		
+		// else{
+		// 	if (is_rgb_enabled){
+		// 		rgb_matrix_enable_noeeprom();
+		// 	}else{
+		// 		rgb_matrix_disable_noeeprom();
+		// 	}
+		// }
+
 		set_ble_work_state(INPUT_MODE);
 
 		ble_send_state = TX_IDLE;
