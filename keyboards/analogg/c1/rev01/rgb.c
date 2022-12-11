@@ -3,7 +3,7 @@
 
 #include "rgb.h"
 #include "analogg.h"
-#include "analogg_ble.h"
+#include "analogg_bm1.h"
 #include "eeprom.h"
 
 

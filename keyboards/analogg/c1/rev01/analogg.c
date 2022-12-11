@@ -5,8 +5,7 @@
 
 #include "usb_main.h"
 
-#include "analogg_ble_protocol.h"
-#include "analogg_ble.h"
+#include "analogg_bm1.h"
 #include <ctype.h>
 #include "analog.h"
 #include "analogg.h"
