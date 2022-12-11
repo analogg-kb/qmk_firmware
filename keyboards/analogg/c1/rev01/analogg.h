@@ -59,19 +59,11 @@ enum keyboard_keycodes {
 #define LONG_PRESSED_TIME 3000
 
 extern uint16_t log_time;
-
-typedef enum {
-    BLE_LED_KEY_ONE = 0,
-    BLE_LED_KEY_ALL,
-    RGB_MATRIX_ANIMATION,
-} _rgb_matrix_indicator;
-
-extern _rgb_matrix_indicator rgb_matrix_indicator;
-
 void pressed_timeout_turn_off_led(void);
 void key_pressed_rgb_enabled(void);
 
-uint32_t my_callback(uint32_t trigger_time, void *cb_arg);
-void     uart_rx_data_handle(uint8_t byte);
-bool     uart_tx_data_handle(void);
-void     long_pressed_event(void);
+void uart_rx_data_handle(uint8_t byte);
+bool uart_tx_data_handle(void);
+void long_pressed_event(void);
+
+uint16_t get_timer_count(void);

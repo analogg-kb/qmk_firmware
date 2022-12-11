@@ -1,3 +1,6 @@
+// Copyright 2021 GuangJun.Wei (@wgj600)
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "bluetooth.h"
 #include "analogg_bm1.h"
 

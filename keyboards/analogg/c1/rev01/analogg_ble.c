@@ -5,6 +5,7 @@
 #include "analogg_ble.h"
 #include "analogg_ble_protocol.h"
 #include "eeprom.h"
+#include "rgb.h"
 
 uint8_t tunnel           = 1;
 uint8_t last_save_tunnel = 1;
