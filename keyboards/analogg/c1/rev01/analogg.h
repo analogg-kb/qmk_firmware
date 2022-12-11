@@ -5,11 +5,17 @@
 
 #include "quantum.h"
 
-#define LOG_Q_DEBUGF(fmt, args...) dprintf("%05d Q " #fmt "\n", log_time, ##args)
-#define LOG_B_DEBUGF(fmt, args...) dprintf("%05d B " #fmt "\n", log_time, ##args)
-#define LOG_Q_INFO(fmt, args...) uprintf("%05d Q " #fmt "\n", log_time, ##args)
-#define LOG_B_INFO(fmt, args...) uprintf("%05d B " #fmt "\n", log_time, ##args)
-
+#ifdef CONSOLE_ENABLE
+#    define LOG_Q_DEBUG(fmt, args...) dprintf("%05d Q " #fmt "\n", log_time, ##args)
+#    define LOG_B_DEBUG(fmt, args...) dprintf("%05d B " #fmt "\n", log_time, ##args)
+#    define LOG_Q_INFO(fmt, args...) uprintf("%05d Q " #fmt "\n", log_time, ##args)
+#    define LOG_B_INFO(fmt, args...) uprintf("%05d B " #fmt "\n", log_time, ##args)
+#else
+#    define LOG_Q_DEBUG(fmt, args...)
+#    define LOG_B_DEBUG(fmt, args...)
+#    define LOG_Q_INFO(fmt, args...)
+#    define LOG_B_INFO(fmt, args...)
+#endif // CONSOLE_ENABLE
 
 // KEYCODES
 enum keyboard_keycodes {

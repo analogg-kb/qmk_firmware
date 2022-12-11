@@ -127,7 +127,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (keycode == RGB_TOG && record->event.pressed) {
         rgb_save_current_state(!rgb_matrix_is_enabled());
     }
-    LOG_Q_DEBUGF("kc=%04x pressed=%d", keycode, record->event.pressed);
+    LOG_Q_DEBUG("kc=%04x pressed=%d", keycode, record->event.pressed);
 
     // Process key directly when USB is connected
     if (IS_USB_DIP_ON()) {
@@ -227,7 +227,6 @@ void timer_task_caps_lock(void) {
 
 void timer_task_ble_state_query(void) {
     if (is_tx_idle()) {
-        LOG_Q_DEBUGF("is_tx_idle");
         // Send state query command
         analogg_ble_send_cmd(DATA_TYPE_STATE);
         // Update battery level every 1 minutes
@@ -326,31 +325,16 @@ void long_pressed_event(void) {
 
         time = timer_read() > custom_pressed_long_time ? (timer_read() - custom_pressed_long_time) : (65535 - custom_pressed_long_time) + timer_read();
         if (time >= LONG_PRESSED_TIME && last_keycode != KC_NO) {
-            // uprintf(" BLE time---: %d  0x%04X\n", time,custom_keycode);
             switch (custom_keycode) {
-                case BT_TN1:
-                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 1);
+                // case BT_TN1 ... BT_TN8:
+                case BT_TN1 ... BT_TN5:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, custom_keycode - BT_TN1 + 1);
                     break;
-                case BT_TN2:
-                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 2);
-                    break;
-                case BT_TN3:
-                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 3);
-                    break;
-                case BT_TN4:
-                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 4);
-                    break;
-                case BT_TN5:
-                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 5);
-                    break;
-                // case BT_TN6: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 6);break;
-                // case BT_TN7: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 7);break;
-                // case BT_TN8: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 8);break;
                 case BT_FTY:
-                    analogg_ble_send_cmd(DATA_TYPE_DEFAULT);
                     rgb_matrix_indicator = BLE_LED_KEY_ALL;
+                    analogg_ble_send_cmd(DATA_TYPE_DEFAULT);
                     analogg_ble_send_cmd(DATA_TYPE_STATE);
-                    uprintf("%5d Q:Restore factory mode\n", log_time);
+                    LOG_Q_INFO("Q:Restore factory mode");
                     break;
                 default:
                     break;

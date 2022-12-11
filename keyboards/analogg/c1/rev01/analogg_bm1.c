@@ -180,16 +180,9 @@ void analogg_ble_cmd_tx(uint8_t seqId) {
 
     uint8_t sum = 0, size = cmdDataBufferSize - 1;
     cmdDataBuffer[5] = seqId;
-    // #ifdef CONSOLE_ENABLE
-    //     if(cmdDataBuffer[3]==0x01)uprintf("%5d Q:keys=",log_time);
-    // #endif
     for (uint8_t i = 0; i < size; i++) {
         sum += cmdDataBuffer[i];
-        // if(i>=9 && cmdDataBuffer[3]==0x01)uprintf("%02x ",cmdDataBuffer[i]);
     }
-    // #ifdef CONSOLE_ENABLE
-    //     if(cmdDataBuffer[3]==0x01)uprintf("\n");
-    // #endif
     cmdDataBuffer[size] = sum;
     ble_send(&SD1, cmdDataBuffer, cmdDataBufferSize);
     // sdWrite(&SD1, cmdDataBuffer, cmdDataBufferSize);
@@ -221,11 +214,9 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
     if (dataLen == 0 || version != PROTOCOL_VERSION) return false;
     errCode = data_package[7];
 
-    // uprintf(" mId=%d Id=%d err=%d %d\n",mSeqId,seqId,errCode,timer_read());
+    // LOG_Q_DEBUG("mId=%d Id=%d err=%d %d",mSeqId,seqId,errCode,timer_read());
     if (mSeqId != seqId || errCode != 0) {
-#ifdef CONSOLE_ENABLE
-        uprintf("%5d Q:errCode=%d\n", log_time, errCode);
-#endif
+        LOG_Q_INFO("errCode=%d\n", errCode);
         ble_send_state = TX_START;
         return false;
     }
@@ -284,7 +275,7 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
                 for (uint8_t i = 0; i < logSize; i++) {
                     log_buffer[i] = data_package[17 + i];
                 }
-                uprintf("%5d B:%s", log_time, log_buffer);
+                LOG_B_INFO("%s", log_buffer);
             }
 
             ble_send_state = TX_IDLE;
@@ -337,9 +328,6 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
 }
 
 void analogg_ble_resolve_protocol(uint8_t byte) {
-    // #ifdef CONSOLE_ENABLE
-    // 	uprintf("%02x ", byte);	// uprintf("%c", toupper(byte));
-    // #endif
     if (pos == INDEX_RESET) {
         resetGetData();
     }
@@ -357,7 +345,7 @@ void analogg_ble_resolve_protocol(uint8_t byte) {
         // version
     } else if (pos == 5) {
         if (byte != mSeqId) {
-            uprintf("%5d Q:id error,id=%02x seqId=%02x\n", log_time, byte, mSeqId);
+            LOG_Q_INFO("id error,id=%02x seqId=%02x", byte, mSeqId);
             pos = INDEX_RESET; // mSeqId
         }
     } else if (pos == 6) {
@@ -380,7 +368,7 @@ void analogg_ble_resolve_protocol(uint8_t byte) {
     } else {
         pos = INDEX_RESET;
     }
-    // uprintf("pos=%d-%02x-checkSum=%02x\n",pos, byte, checkSum);
+    // LOG_Q_DEBUG("pos=%d-%02x-checkSum=%02x",pos, byte, checkSum);
 }
 
 typedef struct _circle_buffer {

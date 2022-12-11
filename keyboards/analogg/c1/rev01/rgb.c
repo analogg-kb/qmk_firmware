@@ -28,7 +28,7 @@ void rgb_init(void) {
 // sleep mode
 void rgb_sleep(void) {
     rgb_matrix_disable_noeeprom();
-    uprintf("Keyboard sleep.\n");
+    LOG_Q_INFO("Keyboard sleep.\n");
 }
 
 void rgb_wakeup(void) {
@@ -37,7 +37,7 @@ void rgb_wakeup(void) {
         return;
     }
     rgb_matrix_enable_noeeprom();
-    uprintf("Keyboard wakeup.\n");
+    LOG_Q_INFO("Keyboard wakeup.\n");
 }
 
 bool rgb_matrix_indicators_kb(void) {
