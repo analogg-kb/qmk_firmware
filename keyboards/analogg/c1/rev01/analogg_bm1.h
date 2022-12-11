@@ -43,7 +43,7 @@ void analogg_bm1_send_consumer(uint16_t usage);
 extern uint8_t tunnel;
 extern uint8_t last_save_tunnel;
 
-typedef enum { TX_IDLE = 0, TX_START = 1, TX_TIMEOUT = 100, TX_RESTART = 255 } _ble_send_state;
+typedef enum { TX_IDLE = 0, TX_START = 1, TX_TIMEOUT = 100 } _ble_send_state;
 extern _ble_send_state ble_send_state;
 
 typedef enum { INPUT_MODE = 0, WAIT_INPUT_MODE, CONFIG_MODE, WAIT_CONFIG_MODE } _ble_work_state;
@@ -59,7 +59,7 @@ typedef enum {
 } ble_state;
 
 typedef struct {
-    uint8_t   tunnel;
+    uint8_t   current_tunnel;
     ble_state list[BLE_TUNNEL_NUM];
 } _ble_tunnel_state;
 extern _ble_tunnel_state ble_tunnel_state;
@@ -78,7 +78,6 @@ void analogg_ble_system(void);
 void analogg_ble_consumer(void);
 
 void analogg_ble_disconnect(void);
-void analogg_ble_stop(void);
 
 #include "quantum.h"
 
@@ -133,7 +132,7 @@ uint8_t  bufferPop(protocol_cmd *_buf);
 void     bufferPush(protocol_cmd _buf);
 uint16_t get_buffer_size(void);
 void     resetGetData(void);
-void     clear_buffer(void);
+void     bm1_reset(void);
 void     push_cmd(uint8_t type, uint16_t keycode, bool pressed);
 
 void clear_keycode_buffer(void);

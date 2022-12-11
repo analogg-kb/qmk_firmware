@@ -5,6 +5,12 @@
 
 #include "quantum.h"
 
+#define LOG_Q_DEBUGF(fmt, args...) dprintf("%05d Q " #fmt "\n", log_time, ##args)
+#define LOG_B_DEBUGF(fmt, args...) dprintf("%05d B " #fmt "\n", log_time, ##args)
+#define LOG_Q_INFO(fmt, args...) uprintf("%05d Q " #fmt "\n", log_time, ##args)
+#define LOG_B_INFO(fmt, args...) uprintf("%05d B " #fmt "\n", log_time, ##args)
+
+
 // KEYCODES
 enum keyboard_keycodes {
 #ifdef VIA_ENABLE

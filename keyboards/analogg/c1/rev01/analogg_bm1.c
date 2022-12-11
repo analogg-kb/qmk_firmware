@@ -22,6 +22,8 @@ static const SerialConfig ble_uart_config = {
 
 bool is_kb_startup = false;
 
+void bm1_clear_buffer(void);
+
 bool ble_send(SerialDriver *sdp, const uint8_t *source, const size_t size) {
     bool success = (size_t)sdWriteTimeout(sdp, source, size, TIME_MS2I(100)) == size;
     return success;
@@ -80,10 +82,6 @@ bool is_ble_work_state_input(void) {
 }
 
 /* -------------------- Public Function Implementation ---------------------- */
-void analogg_ble_stop(void) {
-    ble_send_state = IDLE;
-}
-
 void analogg_ble_send_cmd(uint8_t type) {
     push_cmd(type, 0, false);
 }
@@ -122,7 +120,7 @@ void push_cmd(uint8_t type, uint16_t keycode, bool pressed) {
     if (type == DATA_TYPE_DEFAULT_KEY) {
         if (!is_ble_work_state_input()) {
             set_ble_work_state(WAIT_INPUT_MODE);
-            clear_buffer();
+            bm1_clear_buffer();
         }
     } else {
         if (type != DATA_TYPE_STATE && is_ble_work_state() == INPUT_MODE) {
@@ -132,6 +130,12 @@ void push_cmd(uint8_t type, uint16_t keycode, bool pressed) {
 
     protocol_cmd protocol_cmd_new = {type, keycode, pressed};
     bufferPush(protocol_cmd_new);
+}
+
+
+void bm1_reset(void) {
+    bm1_clear_buffer();
+    ble_send_state = TX_IDLE;
 }
 
 /**
@@ -265,7 +269,7 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
                 }
             }
 
-            ble_tunnel_state.tunnel = data_package[8];
+            ble_tunnel_state.current_tunnel = data_package[8];
             for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++) {
                 ble_tunnel_state.list[i] = data_package[9 + i];
             }
@@ -389,10 +393,6 @@ circle_buffer buffer;
 uint16_t      bufferCount = 0;
 
 bool is_tx_idle(void) {
-    if (!readPin(IS_BLE_PIN)) {
-        return true;
-    }
-
     if (bufferCount == 0 && ble_send_state == TX_IDLE) {
         return true;
     }
@@ -404,7 +404,7 @@ uint16_t get_buffer_size(void) {
     return bufferCount;
 }
 
-void clear_buffer(void) {
+void bm1_clear_buffer(void) {
     buffer.head_pos = 0;
     buffer.tail_pos = 0;
     bufferCount     = 0;
