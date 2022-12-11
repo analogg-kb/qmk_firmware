@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <report.h>
 
-bool ble_send(SerialDriver *sdp, const uint8_t* source, const size_t size);
+bool ble_send(SerialDriver *sdp, const uint8_t *source, const size_t size);
 // bool ble_receive(SerialDriver *sdp, uint8_t* destination, const size_t size);
 
 void analogg_bm1_init(void);

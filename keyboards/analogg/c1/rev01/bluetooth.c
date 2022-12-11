@@ -1,7 +1,6 @@
 #include "bluetooth.h"
 #include "analogg_bm1.h"
 
-
 void bluetooth_init(void) {
     analogg_bm1_init();
 }

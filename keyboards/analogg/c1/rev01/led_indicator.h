@@ -9,12 +9,12 @@
 #undef WS2812_BYTE_ORDER
 #define WS2812_BYTE_ORDER WS2812_BYTE_ORDER_RGB
 
-typedef struct{
+typedef struct {
     LED_TYPE power;
     LED_TYPE ble;
     LED_TYPE caps_lock;
     LED_TYPE battery_level;
-}_led_indicator;
+} _led_indicator;
 
 void led_indicator_set_power_pwm(bool isChrg);
 void led_indicator_set_power(uint8_t r, uint8_t g, uint8_t b);
@@ -26,4 +26,5 @@ void led_indicator_show(void);
 void led_indicator_set_ble_to(uint8_t tunnel);
 void led_indicator_set_black(void);
 void rgblite_setrgb(_led_indicator led_indicator);
+
 LED_TYPE indicator_set_rgb(uint8_t r, uint8_t g, uint8_t b);

@@ -17,6 +17,7 @@
 #include "eeprom.h"
 #include "keycode_config.h"
 
+// clang-format off
 // Disable the DIP switch key
 const matrix_row_t matrix_mask[] = {
     0b111111111111111,
@@ -26,32 +27,30 @@ const matrix_row_t matrix_mask[] = {
     0b111111111111111,
     0b111111111011111,
 };
+// clang-format on
 
-bool            is_rgb_enabled              = true;
-bool            is_usb_suspended            = false;
+bool     is_rgb_enabled           = true;
+bool     is_usb_suspended         = false;
+bool     isChrg                   = false;
+uint8_t  chrgCount                = 0;
+float    rsoc                     = 0;
+bool     custom_pressed           = false;
+uint16_t custom_keycode           = KC_NO;
+uint16_t last_keycode             = KC_NO;
+uint16_t custom_pressed_long_time = 0;
+uint16_t log_time                 = 0;
 
-bool            isChrg                      = false;
-uint8_t         chrgCount                   = 0;
-float           rsoc                        = 0;
+#define RGB_SLEEP_TIMEOUT 10
+uint16_t rgb_sleep_time = 0;
 
-bool            custom_pressed              = false;
-uint16_t        custom_keycode              = KC_NO;
-uint16_t        last_keycode                = KC_NO;
-uint16_t        custom_pressed_long_time    = 0;
-uint16_t        log_time                    = 0;
+protocol_cmd pop_protocol_cmd = {0};
 
-#define RGB_SLEEP_TIMEOUT                   10
-uint16_t        rgb_sleep_time              = 0;
-
-protocol_cmd    pop_protocol_cmd            = {0};
-
-_rgb_matrix_indicator  rgb_matrix_indicator               = RGB_MATRIX_ANIMATION;
-// _led_indicator  led_indicator               = {.power={RGB_BLACK},.ble={RGB_BLACK},.caps_lock={RGB_BLACK},.battery_level={RGB_BLACK}};
+_rgb_matrix_indicator rgb_matrix_indicator = RGB_MATRIX_ANIMATION;
 
 /* --------------------------- qmk function------------------------------ */
-void board_init(void){
+void board_init(void) {
     AFIO->MAPR &= ~AFIO_MAPR_SWJ_CFG_Msk;
-    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_DISABLE_Msk; //disable JTAG and SWD
+    AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_DISABLE_Msk; // disable JTAG and SWD
 }
 
 void keyboard_pre_init_kb(void) {
@@ -66,191 +65,221 @@ void keyboard_post_init_kb(void) {
     defer_exec(TIMER_BASE_TIME, my_callback, NULL);
     keyboard_post_init_user();
 
-    if (rgb_matrix_is_enabled()){
+    if (rgb_matrix_is_enabled()) {
         is_rgb_enabled = true;
-    }else{
+    } else {
         is_rgb_enabled = false;
     }
 }
 
-static uint16_t time_count = 0;
+static uint16_t time_count        = 0;
 static uint16_t bt_log_time_count = 0;
+
 uint32_t my_callback(uint32_t trigger_time, void *cb_arg) {
-    if (!readPin(IS_BLE)){
-        if (is_usb_suspended){
+    if (!readPin(IS_BLE)) {
+        if (is_usb_suspended) {
             led_indicator_set_black();
-            rgb_matrix_indicator = RGB_MATRIX_ANIMATION;  //Turn on RGB matrix
+            rgb_matrix_indicator = RGB_MATRIX_ANIMATION; // Turn on RGB matrix
         }
-        return TIMER_BASE_TIME*100;
-    }else{
+        return TIMER_BASE_TIME * 100;
+    } else {
         long_pressed_event();
 
-        switch (ble_send_state){
-            case TX_IDLE:     uart_tx_data_handle();        break;
-            case TX_TIMEOUT:  analogg_ble_cmd_tx(++mSeqId); break;
-            case TX_RESTART:  analogg_ble_cmd_tx(++mSeqId); break;
-            default:          ble_send_state++;             break;
+        switch (ble_send_state) {
+            case TX_IDLE:
+                uart_tx_data_handle();
+                break;
+            case TX_TIMEOUT:
+                analogg_ble_cmd_tx(++mSeqId);
+                break;
+            case TX_RESTART:
+                analogg_ble_cmd_tx(++mSeqId);
+                break;
+            default:
+                ble_send_state++;
+                break;
         }
 
         uint8_t state = ble_tunnel_state.list[ble_tunnel_state.tunnel];
         time_count++;
-        if (time_count%T100MS==0){
-            //ble led state
-            if (state==CONNECTED || state==CONNECTED_AND_ACTIVE) 
-                led_indicator_set_ble_to(ble_tunnel_state.tunnel);
+        if (time_count % T100MS == 0) {
+            // ble led state
+            if (state == CONNECTED || state == CONNECTED_AND_ACTIVE) led_indicator_set_ble_to(ble_tunnel_state.tunnel);
 
-            //POWER LED state
-            // uprintf("chrgCount=%d %b\n",chrgCount,isChrg);
-            if (chrgCount>30)isChrg = true;
+            // POWER LED state
+            //  uprintf("chrgCount=%d %b\n",chrgCount,isChrg);
+            if (chrgCount > 30) isChrg = true;
             chrgCount = 0;
             led_indicator_set_power_pwm(isChrg);
 
-            //CAPS_LOCK LED state
+            // CAPS_LOCK LED state
             if (host_keyboard_led_state().caps_lock) {
                 led_indicator_set_caps_lock(RGB_WHITE);
             } else {
                 led_indicator_set_caps_lock(RGB_BLACK);
             }
             // get ble
-            if (is_tx_idle()){
+            if (is_tx_idle()) {
                 analogg_ble_send_cmd(DATA_TYPE_STATE);
                 bt_log_time_count++;
-                if (bt_log_time_count>600){
-                    bt_log_time_count=0;
-                    analogg_ble_send_cmd_by_val(DATA_TYPE_BATTERY_LEVEL,(uint8_t)((int16_t)rsoc));
+                if (bt_log_time_count > 600) {
+                    bt_log_time_count = 0;
+                    analogg_ble_send_cmd_by_val(DATA_TYPE_BATTERY_LEVEL, (uint8_t)((int16_t)rsoc));
                 }
             }
         }
-        if (time_count%T200MS==0)if (state==ADV_WAIT_CONNECTING_ACTIVE)led_indicator_set_ble_to(ble_tunnel_state.tunnel);
-        if (time_count%T400MS==0)if (state==ADV_WAIT_CONNECTING_ACTIVE)led_indicator_set_ble(RGB_BLACK);
-        
-        if (time_count%T1S==0){
+        if (time_count % T200MS == 0)
+            if (state == ADV_WAIT_CONNECTING_ACTIVE) led_indicator_set_ble_to(ble_tunnel_state.tunnel);
+        if (time_count % T400MS == 0)
+            if (state == ADV_WAIT_CONNECTING_ACTIVE) led_indicator_set_ble(RGB_BLACK);
+
+        if (time_count % T1S == 0) {
             log_time++;
-            //BATTERY LEVEL LED state
+            // BATTERY LEVEL LED state
             uint16_t bl = analogReadPin(BATTERY_LEVEL_PORT);
-            rsoc = ((bl-BATTERY_RSOC_0)/BATTERY_RSOC_AREA) * 100.00f;
-            if (rsoc>100)rsoc=100;
-            if (rsoc<0)rsoc=0;
-            if (rsoc<10){
+            rsoc        = ((bl - BATTERY_RSOC_0) / BATTERY_RSOC_AREA) * 100.00f;
+            if (rsoc > 100) {
+                rsoc = 100;
+            }
+            if (rsoc < 0) {
+                rsoc = 0;
+            }
+            if (rsoc < 10) {
                 led_indicator_set_battery_level(RGB_RED);
-            }else if (rsoc>=10 && rsoc<40){  //10-40
+            } else if (rsoc >= 10 && rsoc < 40) { // 10-40
                 led_indicator_set_battery_level(RGB_ORANGE);
-            }else if (rsoc>=40 && rsoc<70){   //40-70
+            } else if (rsoc >= 40 && rsoc < 70) { // 40-70
                 led_indicator_set_battery_level(RGB_YELLOW);
-            }else if (rsoc>=70){
+            } else if (rsoc >= 70) {
                 led_indicator_set_battery_level(RGB_GREEN);
             }
-            //rgb
-            if (rgb_sleep_time<RGB_SLEEP_TIMEOUT){
+            // rgb
+            if (rgb_sleep_time < RGB_SLEEP_TIMEOUT) {
                 rgb_sleep_time++;
-                if (rgb_sleep_time==RGB_SLEEP_TIMEOUT){
+                if (rgb_sleep_time == RGB_SLEEP_TIMEOUT) {
                     rgb_matrix_disable_noeeprom();
                 }
             }
 
-            if (state==IDLE || state==ADV_WAIT_CONNECTING || state==ADV_WAIT_CONNECTING_INACTIVE)led_indicator_set_ble_to(ble_tunnel_state.tunnel);
+            if (state == IDLE || state == ADV_WAIT_CONNECTING || state == ADV_WAIT_CONNECTING_INACTIVE) {
+                led_indicator_set_ble_to(ble_tunnel_state.tunnel);
+            }
         }
-        if (time_count%T2S==0){
-            if (state==IDLE || state==ADV_WAIT_CONNECTING || state==ADV_WAIT_CONNECTING_INACTIVE)led_indicator_set_ble(RGB_BLACK);
+        if (time_count % T2S == 0) {
+            if (state == IDLE || state == ADV_WAIT_CONNECTING || state == ADV_WAIT_CONNECTING_INACTIVE) {
+                led_indicator_set_ble(RGB_BLACK);
+            }
             time_count = 0;
         }
-        if (is_tx_idle())led_indicator_show();
+        if (is_tx_idle()) {
+            led_indicator_show();
+        }
     }
     return TIMER_BASE_TIME;
 }
 
-void key_pressed_rgb_enabled(void){
-    if(is_rgb_enabled){
+void key_pressed_rgb_enabled(void) {
+    if (is_rgb_enabled) {
         rgb_matrix_enable_noeeprom();
         uprintf("rgb_matrix_enable_noeeprom=2\n");
-    }else {
+    } else {
         rgb_matrix_disable_noeeprom();
-    }  
+    }
     rgb_sleep_time = 0;
 }
 
-void ble_state_show_by_rgb_matrix(uint8_t index,uint8_t state){
-    index+=31;
-    switch (state){
-        case IDLE:      //always bright
+void ble_state_show_by_rgb_matrix(uint8_t index, uint8_t state) {
+    index += 31;
+    switch (state) {
+        case IDLE: // always bright
             rgb_matrix_set_color(index, RGB_RED);
             break;
-        case ADV_WAIT_CONNECTING: //slow blink
-            if (time_count%T2S<T1S){
+        case ADV_WAIT_CONNECTING: // slow blink
+            if (time_count % T2S < T1S) {
                 rgb_matrix_set_color(index, RGB_YELLOW);
-            }else{
+            } else {
                 rgb_matrix_set_color(index, RGB_BLACK);
             }
             break;
-        case ADV_WAIT_CONNECTING_ACTIVE:   //quick blink
-            if (time_count%T400MS<T200MS){
+        case ADV_WAIT_CONNECTING_ACTIVE: // quick blink
+            if (time_count % T400MS < T200MS) {
                 rgb_matrix_set_color(index, RGB_YELLOW);
-            }else{
+            } else {
                 rgb_matrix_set_color(index, RGB_BLACK);
             }
-        break;
-        case ADV_WAIT_CONNECTING_INACTIVE:      //slow blink
-            if (time_count%T2S<T1S){
+            break;
+        case ADV_WAIT_CONNECTING_INACTIVE: // slow blink
+            if (time_count % T2S < T1S) {
                 rgb_matrix_set_color(index, RGB_YELLOW);
-            }else{
+            } else {
                 rgb_matrix_set_color(index, RGB_BLACK);
             }
-        break;
-        case CONNECTED:  //always bright
-                rgb_matrix_set_color(index, RGB_YELLOW);
-        break;
+            break;
+        case CONNECTED: // always bright
+            rgb_matrix_set_color(index, RGB_YELLOW);
+            break;
         case CONNECTED_AND_ACTIVE:
             rgb_matrix_set_color(index, RGB_BLUE);
 
-            if (last_save_tunnel!=tunnel){
+            if (last_save_tunnel != tunnel) {
                 last_save_tunnel = tunnel;
                 eeprom_write_byte(EE_ANALOGG_LINK_ID, tunnel);
             }
-        break;
-        default:break;
+            break;
+        default:
+            break;
     }
 }
 
 bool rgb_matrix_indicators_kb(void) {
-     if (is_ble_work_state_input())
-        return false;
+    if (is_ble_work_state_input()) return false;
 
-     if (rgb_matrix_indicator==RGB_MATRIX_ANIMATION)
-        return false;
+    if (rgb_matrix_indicator == RGB_MATRIX_ANIMATION) return false;
 
-    rgb_matrix_set_color_all(0,0,0);
-    if(rgb_matrix_indicator==BLE_LED_KEY_ONE){
-        uint8_t index = tunnel-1;
-        ble_state_show_by_rgb_matrix(index,ble_tunnel_state.list[index]);
-    }else if (rgb_matrix_indicator==BLE_LED_KEY_ALL){
-        for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++)ble_state_show_by_rgb_matrix(i,ble_tunnel_state.list[i]);     
+    rgb_matrix_set_color_all(0, 0, 0);
+    if (rgb_matrix_indicator == BLE_LED_KEY_ONE) {
+        uint8_t index = tunnel - 1;
+        ble_state_show_by_rgb_matrix(index, ble_tunnel_state.list[index]);
+    } else if (rgb_matrix_indicator == BLE_LED_KEY_ALL) {
+        for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++)
+            ble_state_show_by_rgb_matrix(i, ble_tunnel_state.list[i]);
     }
     return true;
 }
 
-void long_pressed_event(void){
+void long_pressed_event(void) {
     uint16_t time = 0;
-    if (custom_keycode>=BT_TN1 && custom_keycode<=BT_FTY){
-        if (!custom_pressed){
+    if (custom_keycode >= BT_TN1 && custom_keycode <= BT_FTY) {
+        if (!custom_pressed) {
             last_keycode = KC_NO;
             return;
         }
 
-        if (last_keycode!=custom_keycode){
-            last_keycode = custom_keycode;
+        if (last_keycode != custom_keycode) {
+            last_keycode             = custom_keycode;
             custom_pressed_long_time = timer_read();
             return;
         }
 
-        time = timer_read()>custom_pressed_long_time ? (timer_read()-custom_pressed_long_time) : (65535-custom_pressed_long_time)+timer_read();
-        if (time>=LONG_PRESSED_TIME && last_keycode != KC_NO){
-            //uprintf(" BLE time---: %d  0x%04X\n", time,custom_keycode);
-            switch (custom_keycode){
-                case BT_TN1: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 1);break;
-                case BT_TN2: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 2);break;
-                case BT_TN3: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 3);break;
-                case BT_TN4: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 4);break;
-                case BT_TN5: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 5);break;
+        time = timer_read() > custom_pressed_long_time ? (timer_read() - custom_pressed_long_time) : (65535 - custom_pressed_long_time) + timer_read();
+        if (time >= LONG_PRESSED_TIME && last_keycode != KC_NO) {
+            // uprintf(" BLE time---: %d  0x%04X\n", time,custom_keycode);
+            switch (custom_keycode) {
+                case BT_TN1:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 1);
+                    break;
+                case BT_TN2:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 2);
+                    break;
+                case BT_TN3:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 3);
+                    break;
+                case BT_TN4:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 4);
+                    break;
+                case BT_TN5:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 5);
+                    break;
                 // case BT_TN6: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 6);break;
                 // case BT_TN7: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 7);break;
                 // case BT_TN8: analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, 8);break;
@@ -258,76 +287,89 @@ void long_pressed_event(void){
                     analogg_ble_send_cmd(DATA_TYPE_DEFAULT);
                     rgb_matrix_indicator = BLE_LED_KEY_ALL;
                     analogg_ble_send_cmd(DATA_TYPE_STATE);
-                    uprintf("%5d Q:Restore factory mode\n",log_time);
-                break;
-                default: break;
+                    uprintf("%5d Q:Restore factory mode\n", log_time);
+                    break;
+                default:
+                    break;
             }
             custom_pressed = false;
-            last_keycode = KC_NO;
+            last_keycode   = KC_NO;
         }
     }
 }
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-    if (keycode==RGB_TOG){
-        if (rgb_matrix_is_enabled()){
+    if (keycode == RGB_TOG) {
+        if (rgb_matrix_is_enabled()) {
             is_rgb_enabled = false;
-        }else{
+        } else {
             is_rgb_enabled = true;
         }
-        uprintf("rgb_matrix_enable_noeeprom4=%d\n",is_rgb_enabled);
+        uprintf("rgb_matrix_enable_noeeprom4=%d\n", is_rgb_enabled);
     }
 
-    if (!readPin(IS_BLE)){
-        #ifdef CONSOLE_ENABLE
-            uprintf("%5d Q:cable,kc=%04x pressed=%d\n",log_time,keycode,record->event.pressed);
-        #endif
+    if (!readPin(IS_BLE)) {
+#ifdef CONSOLE_ENABLE
+        uprintf("%5d Q:cable,kc=%04x pressed=%d\n", log_time, keycode, record->event.pressed);
+#endif
         return process_record_user(keycode, record);
     }
 
-    //BLE mode
-    if (keycode>=QK_MOMENTARY && keycode<=QK_MOMENTARY_MAX){   //fn
+    // BLE mode
+    if (keycode >= QK_MOMENTARY && keycode <= QK_MOMENTARY_MAX) { // fn
         return process_record_user(keycode, record);
     }
     custom_keycode = keycode;
     custom_pressed = record->event.pressed;
-    if (keycode>=BT_TN1 && keycode<=BT_FTY){    // costom key
-        if (record->event.pressed){
+    if (keycode >= BT_TN1 && keycode <= BT_FTY) { // costom key
+        if (record->event.pressed) {
             rgb_matrix_enable_noeeprom();
             uprintf("rgb_matrix_enable_noeeprom=3\n");
-            switch (keycode){
-                case BT_TN1: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 1);break;
-                case BT_TN2: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 2);break;
-                case BT_TN3: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 3);break;
-                case BT_TN4: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 4);break;
-                case BT_TN5: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 5);break;
+            switch (keycode) {
+                case BT_TN1:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 1);
+                    break;
+                case BT_TN2:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 2);
+                    break;
+                case BT_TN3:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 3);
+                    break;
+                case BT_TN4:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 4);
+                    break;
+                case BT_TN5:
+                    analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 5);
+                    break;
                 // case BT_TN6: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 6);break;
                 // case BT_TN7: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 7);break;
                 // case BT_TN8: analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, 8);break;
                 case BT_STATE:
                     rgb_matrix_indicator = BLE_LED_KEY_ALL;
-                    analogg_ble_send_cmd(DATA_TYPE_STATE);break;
-                default:break;
+                    analogg_ble_send_cmd(DATA_TYPE_STATE);
+                    break;
+                default:
+                    break;
             }
         }
         return process_record_user(keycode, record);
     }
-    if (IS_ANY(keycode)){
+    if (IS_ANY(keycode)) {
         key_pressed_rgb_enabled();
         rgb_matrix_indicator = RGB_MATRIX_ANIMATION;
-        push_cmd(DATA_TYPE_DEFAULT_KEY,keycode,record->event.pressed);
+        push_cmd(DATA_TYPE_DEFAULT_KEY, keycode, record->event.pressed);
         return false;
-    }else{
+    } else {
         return process_record_user(keycode, record);
     }
 }
 
-bool uart_tx_data_handle(void){
-    if (ble_send_state==TX_IDLE && bufferPop(&pop_protocol_cmd)){
-        ble_send_state=TX_START;
-        if (pop_protocol_cmd.type==DATA_TYPE_DEFAULT_KEY){
+bool uart_tx_data_handle(void) {
+    if (ble_send_state == TX_IDLE && bufferPop(&pop_protocol_cmd)) {
+        ble_send_state = TX_START;
+        if (pop_protocol_cmd.type == DATA_TYPE_DEFAULT_KEY) {
             analogg_ble_keycode_handle(pop_protocol_cmd);
-        }else{
+        } else {
             analogg_ble_config_handle(pop_protocol_cmd);
         }
         return true;
@@ -336,30 +378,30 @@ bool uart_tx_data_handle(void){
 }
 
 void matrix_scan_kb(void) {
-    if (!readPin(IS_CHRG)){
+    if (!readPin(IS_CHRG)) {
         isChrg = true;
         chrgCount++;
-    }else{
-        isChrg = false;
-        chrgCount=0;
+    } else {
+        isChrg    = false;
+        chrgCount = 0;
     }
     while (!sdGetWouldBlock(&SD1)) {
         analogg_ble_resolve_protocol(sdGet(&SD1));
     }
- 
+
     /**********RGB_DISABLE_WHEN_USB_SUSPENDED***********/
-    if (USB_DRIVER.state==USB_SUSPENDED){
+    if (USB_DRIVER.state == USB_SUSPENDED) {
         is_usb_suspended = true;
-        if(!readPin(IS_BLE) && is_rgb_enabled){
-            if (!isChrg){
+        if (!readPin(IS_BLE) && is_rgb_enabled) {
+            if (!isChrg) {
                 rgb_matrix_disable_noeeprom();
             }
         }
-    }else if (USB_DRIVER.state==USB_ACTIVE){
-    	if (is_usb_suspended){
-            if(is_rgb_enabled){
+    } else if (USB_DRIVER.state == USB_ACTIVE) {
+        if (is_usb_suspended) {
+            if (is_rgb_enabled) {
                 rgb_matrix_enable_noeeprom();
-            }else{
+            } else {
                 rgb_matrix_disable_noeeprom();
             }
             rgb_sleep_time = 0;
@@ -373,7 +415,9 @@ void matrix_scan_kb(void) {
 
 #ifdef DIP_SWITCH_MATRIX_GRID
 bool dip_switch_update_kb(uint8_t index, bool active) {
-    if (!dip_switch_update_user(index, active)) { return false;}
+    if (!dip_switch_update_user(index, active)) {
+        return false;
+    }
     if (index == 0) {
         default_layer_set(1UL << (active ? 2 : 0));
     }
@@ -383,7 +427,9 @@ bool dip_switch_update_kb(uint8_t index, bool active) {
 
 #ifdef ENCODER_ENABLE
 bool encoder_update_kb(uint8_t index, bool clockwise) {
-    if (!encoder_update_user(index, clockwise)) { return false; }
+    if (!encoder_update_user(index, clockwise)) {
+        return false;
+    }
     if (index == 0) {
         if (clockwise) {
             tap_code(KC_VOLU);
@@ -395,6 +441,7 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
 }
 #endif
 
+// clang-format off
 #ifdef RGB_MATRIX_ENABLE
 const is31_led PROGMEM g_is31_leds[RGB_MATRIX_LED_COUNT] = {
 /* Refer to IS31 manual for these locations
@@ -528,3 +575,4 @@ led_config_t g_led_config = {
 	}
 };
 #endif
+// clang-format on
