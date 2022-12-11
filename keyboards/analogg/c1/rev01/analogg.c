@@ -358,6 +358,7 @@ void matrix_scan_kb(void) {
         }
     }else if (USB_DRIVER.state==USB_ACTIVE){
     	if (is_usb_suspended && !turn_off_is_rgb_enabled){
+            rgb_sleep_time = 0;
             rgb_matrix_enable_noeeprom();
             uprintf("rgb_matrix_enable_noeeprom=1\n");
             turn_off_is_rgb_enabled = true;
