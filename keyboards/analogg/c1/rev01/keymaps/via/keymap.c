@@ -4,6 +4,13 @@
 #include QMK_KEYBOARD_H
 #include "analogg.h"
 
+enum layers {
+    WIN_BASE,
+    WIN_FN,
+    MAC_BASE,
+    MAC_FN,
+};
+
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*

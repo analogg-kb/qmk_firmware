@@ -5,15 +5,6 @@
 
 #include "quantum.h"
 
-#define xxx KC_NO
-
-enum layers {
-    WIN_BASE,
-    WIN_FN,
-    MAC_BASE,
-    MAC_FN,
-};
-
 // KEYCODES
 enum keyboard_keycodes {
 #ifdef VIA_ENABLE

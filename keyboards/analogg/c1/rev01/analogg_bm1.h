@@ -25,14 +25,17 @@ void analogg_bm1_send_consumer(uint16_t usage);
 #    define BLE_RST A2
 #endif
 
-#ifndef IS_BLE
-#    define IS_BLE B8
+#ifndef IS_BLE_PIN
+#    define IS_BLE_PIN B8
 #endif
-#ifndef IS_CHRG
-#    define IS_CHRG A6 // 1 = full 0 change  1 0  no battery
+#define IS_BLE_DIP_ON() (readPin(IS_BLE_PIN) != 0)
+#define IS_USB_DIP_ON() (readPin(IS_BLE_PIN) == 0)
+
+#ifndef IS_CHRG_PIN
+#    define IS_CHRG_PIN A6    // 1 = full 0 change  1 0  no battery
 #endif
 #ifndef PIO11_WAKEUP
-#    define PIO11_WAKEUP A5 // input(wakeup control): use it with (AT+SLEEPMODE!=0)
+#    define PIO11_WAKEUP A5    // input(wakeup control): use it with (AT+SLEEPMODE!=0)
 #endif
 
 #define EE_ANALOGG_LINK_ID (uint8_t *)128

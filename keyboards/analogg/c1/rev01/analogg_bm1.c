@@ -254,7 +254,7 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
              * dataLen = 0x0A  ble state
              * dataLen > 0x0A  ble state + log
              */
-            if (!readPin(IS_BLE)) {
+            if (IS_BLE_DIP_ON()) {
                 if (!is_kb_startup) {
                     is_kb_startup  = true;
                     uint8_t tunnel = eeprom_read_byte(EE_ANALOGG_LINK_ID);
@@ -389,7 +389,7 @@ circle_buffer buffer;
 uint16_t      bufferCount = 0;
 
 bool is_tx_idle(void) {
-    if (!readPin(IS_BLE)) {
+    if (!readPin(IS_BLE_PIN)) {
         return true;
     }
 
