@@ -51,11 +51,11 @@ enum keyboard_keycodes   {
 #define BATTERY_RSOC_AREA           97.00f
 
 #define TIMER_BASE_TIME             10  // TIMER_BASE_TIME
-#define BLE_INDICATOR_100MS         10  // TIMER_DELAY*BLE_INDICATOR_100MS
-#define BLE_INDICATOR_200MS         20  // TIMER_DELAY*BLE_TUNNEL_LED_250MS
-#define BLE_INDICATOR_400MS         40  // TIMER_DELAY*BLE_TUNNEL_LED_500MS
-#define BLE_INDICATOR_1S            100 // TIMER_DELAY*BLE_TUNNEL_LED_1S
-#define BLE_INDICATOR_2S            200 // TIMER_DELAY*BLE_TUNNEL_LED_2S
+#define T100MS         10  // TIMER_DELAY*BLE_INDICATOR_100MS
+#define T200MS         20  // TIMER_DELAY*BLE_TUNNEL_LED_250MS
+#define T400MS         40  // TIMER_DELAY*BLE_TUNNEL_LED_500MS
+#define T1S            100 // TIMER_DELAY*BLE_TUNNEL_LED_1S
+#define T2S            200 // TIMER_DELAY*BLE_TUNNEL_LED_2S
 
 #define LONG_PRESSED_TIME           3000
 
@@ -64,15 +64,13 @@ extern uint16_t log_time;
 typedef enum {
     BLE_LED_KEY_ONE= 0,
     BLE_LED_KEY_ALL,
-    BLE_LED_INDICATOR,
-} _ble_state_led;
-extern _ble_state_led ble_state_led;
+    RGB_MATRIX_ANIMATION,
+} _rgb_matrix_indicator; 
+
+extern _rgb_matrix_indicator rgb_matrix_indicator;
 
 void pressed_timeout_turn_off_led(void);
-void pressed_turn_on_led(void);
-
-bool send(SerialDriver *sdp, const uint8_t* source, const size_t size);
-bool receive(SerialDriver *sdp, uint8_t* destination, const size_t size);
+void key_pressed_rgb_enabled(void);
 
 uint32_t my_callback(uint32_t trigger_time, void *cb_arg);
 void uart_rx_data_handle(uint8_t byte);

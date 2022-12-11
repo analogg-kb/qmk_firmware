@@ -9,8 +9,6 @@
 uint8_t tunnel                      = 1;
 uint8_t last_save_tunnel            = 1;
 
-bool    is_rgb_enabled              = true;    // TODO TEST
-
 _ble_work_state     ble_work_state   = INPUT_MODE;
 _ble_send_state     ble_send_state   = TX_IDLE;
 _ble_tunnel_state   ble_tunnel_state;
@@ -41,31 +39,13 @@ void analogg_ble_send_cmd(uint8_t type){
 }
 
 void analogg_ble_send_cmd_by_id(uint8_t type, uint8_t tunnel_id){
-    ble_state_led = BLE_LED_KEY_ONE;
+    rgb_matrix_indicator = BLE_LED_KEY_ONE;
     tunnel = tunnel_id;
     push_cmd(type,tunnel_id,false);
 }
 
 void analogg_ble_send_cmd_by_val(uint8_t type, uint8_t val){
     push_cmd(type,val,false);
-}
-
-void analogg_ble_startup(void) {
-
-    setPinInput(IS_BLE);
-
-    setPinInput(IS_CHRG);
-    writePinHigh(IS_CHRG);
-
-    setPinOutput(PIO11_WAKEUP);
-    writePinLow(PIO11_WAKEUP);
-
-#ifdef BLE_RST
-    setPinOutput(BLE_RST);
-    writePinHigh(BLE_RST);   //reset the ble moudle
-    wait_ms(100);
-    writePinLow(BLE_RST);
-#endif
 }
 
 void analogg_ble_disconnect(void) {
@@ -75,12 +55,5 @@ void analogg_ble_disconnect(void) {
 void analogg_ble_reset_leds(){
     if (is_ble_work_state()==WAIT_CONFIG_MODE){
         for (uint8_t i = 0; i < BLE_TUNNEL_NUM ; i++) ble_tunnel_state.list[i]=IDLE;  //reset leds state
-        // is_rgb_enabled = rgb_matrix_is_enabled();   // Save the current rgb state
-        rgb_matrix_enable_noeeprom();               // Turn on the rgb light
-        uprintf("rgb_matrix_enable_noeeprom3\n");
     }
-}
-
-void analogg_ble_mouse(){
-
 }

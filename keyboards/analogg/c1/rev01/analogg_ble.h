@@ -30,8 +30,6 @@
 extern uint8_t tunnel;
 extern uint8_t last_save_tunnel;
 
-extern bool    is_rgb_enabled;
-
 typedef enum {
     TX_IDLE     = 0,
     TX_START    = 1,
@@ -73,10 +71,8 @@ void analogg_ble_send_cmd_by_val(uint8_t type, uint8_t val);
 
 void analogg_ble_reset_leds(void);
 void analogg_ble_keyboard(void);
-void analogg_ble_mouse(void);
 void analogg_ble_system(void);
 void analogg_ble_consumer(void);
 
-void analogg_ble_startup(void);
 void analogg_ble_disconnect(void);
 void analogg_ble_stop(void);

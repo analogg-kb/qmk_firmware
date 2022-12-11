@@ -9,6 +9,7 @@
 #include "analogg_ble.h"
 #include "analogg_ble_protocol.h"
 #include "eeprom.h"
+#include "analogg_bm1.h"
 
 bool is_kb_startup = false;
 
@@ -89,7 +90,7 @@ void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t 
     //     if(cmdDataBuffer[3]==0x01)uprintf("\n");
     // #endif
 	cmdDataBuffer[size] = sum;
-	send(&SD1,cmdDataBuffer,cmdDataBufferSize);
+	ble_send(&SD1,cmdDataBuffer,cmdDataBufferSize);
 	// sdWrite(&SD1, cmdDataBuffer, cmdDataBufferSize);
  }
 
@@ -131,9 +132,9 @@ bool protocol_handle(uint8_t data_package[],uint8_t size){
 	if (type==DATA_TYPE_KEY || type==DATA_TYPE_CONSUMER_KEY || type==DATA_TYPE_SYSTEM_CONTROL){
 
 		
-		if (is_ble_work_state()==CONFIG_MODE){
-        	rgb_matrix_enable_noeeprom();            // Turn on the rgb light
-    	}
+		// if (is_ble_work_state()==CONFIG_MODE){
+        // 	rgb_matrix_enable_noeeprom();            // Turn on the rgb light
+    	// }
 		
 		// else{
 		// 	if (is_rgb_enabled){

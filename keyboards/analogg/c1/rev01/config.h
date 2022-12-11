@@ -4,7 +4,7 @@
 #pragma once
 
 // Debug
-#define DEBUG_MATRIX_SCAN_RATE
+// #define DEBUG_MATRIX_SCAN_RATE
 
 // Encoder config
 #define ENCODERS_PAD_A { A0 }

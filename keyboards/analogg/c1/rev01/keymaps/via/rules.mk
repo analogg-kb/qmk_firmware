@@ -1,6 +1,6 @@
 VIA_ENABLE = yes
 
-SRC = \
+SRC += \
 	analogg_ble_protocol.c \
 	analogg_ble.c \
 	analogg.c \
