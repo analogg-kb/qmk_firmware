@@ -27,14 +27,14 @@ void led_indicator_set_black(void){
 
 static uint8_t rgb_pwm_inc=0, rgb_pwm_dec=0;
 void led_indicator_set_power_pwm(bool isChrg){
-    if (isChrg){
-        if (rgb_pwm_inc<RGBLIGHT_LIMIT_VAL){
-            rgb_pwm_inc+=2;
+    if (isChrg) {
+        if (rgb_pwm_inc<RGBLIGHT_LIMIT_VAL) {
+            rgb_pwm_inc += 8;
             rgb_pwm_dec=rgb_pwm_inc;
             led_indicator_set_power(rgb_pwm_inc,rgb_pwm_inc,rgb_pwm_inc);
         }else{
             if (rgb_pwm_dec>0){
-                rgb_pwm_dec-=2;
+                rgb_pwm_dec-=8;
             }else{
                 rgb_pwm_dec=0;
                 rgb_pwm_inc=0;
@@ -71,15 +71,22 @@ void rgblite_setrgb(_led_indicator led_indicator) {
         led_indicator.caps_lock,
         led_indicator.ble,
         led_indicator.battery_level,
-        led_indicator.power};
+        led_indicator.power
+    };
     ws2812_setleds(leds, RGBLED_NUM);
 }
 
+#ifdef RGBLIGHT_LIMIT_VAL
+    #define SCALE_RGBLIGHT_LIMIT_VAL(val) (uint8_t)(((float)val / 255) * RGBLIGHT_LIMIT_VAL)
+#else
+    #define SCALE_RGBLIGHT_LIMIT_VAL(val) (val)
+#endif
+
 LED_TYPE indicator_set_rgb(uint8_t r, uint8_t g, uint8_t b){
 #ifdef RGBLIGHT_LIMIT_VAL
-    r = r / 255 * RGBLIGHT_LIMIT_VAL;
-    g = g / 255 * RGBLIGHT_LIMIT_VAL;
-    b = b / 255 * RGBLIGHT_LIMIT_VAL;
+    r = SCALE_RGBLIGHT_LIMIT_VAL(r);
+    g = SCALE_RGBLIGHT_LIMIT_VAL(g);
+    b = SCALE_RGBLIGHT_LIMIT_VAL(b);
 #endif
 #if (RGB_INDICATOR_ORDER == RGB_INDICATOR_ORDER_GRB)
     uint8_t tmp;
