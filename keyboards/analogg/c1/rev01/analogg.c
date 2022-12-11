@@ -27,8 +27,7 @@ const matrix_row_t matrix_mask[] = {
     0b111111111011111,
 };
 
-bool    is_rgb_enabled              = true;    // TODO TEST
-bool            turn_off_is_rgb_enabled     = false;
+bool            is_rgb_enabled              = true;
 bool            is_usb_suspended            = false;
 
 bool            isChrg                      = false;
@@ -270,6 +269,15 @@ void long_pressed_event(void){
 }
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    if (keycode==RGB_TOG){
+        if (rgb_matrix_is_enabled()){
+            is_rgb_enabled = false;
+        }else{
+            is_rgb_enabled = true;
+        }
+        uprintf("rgb_matrix_enable_noeeprom4=%d\n",is_rgb_enabled);
+    }
+
     if (!readPin(IS_BLE)){
         #ifdef CONSOLE_ENABLE
             uprintf("%5d Q:cable,kc=%04x pressed=%d\n",log_time,keycode,record->event.pressed);
@@ -303,14 +311,6 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             }
         }
         return process_record_user(keycode, record);
-    }
-    if (keycode==RGB_TOG){
-        if (rgb_matrix_is_enabled()){
-            is_rgb_enabled = false;
-        }else{
-            is_rgb_enabled = true;
-        }
-        uprintf("rgb_matrix_enable_noeeprom4=%d\n",is_rgb_enabled);
     }
     if (IS_ANY(keycode)){
         key_pressed_rgb_enabled();
@@ -350,18 +350,20 @@ void matrix_scan_kb(void) {
     /**********RGB_DISABLE_WHEN_USB_SUSPENDED***********/
     if (USB_DRIVER.state==USB_SUSPENDED){
         is_usb_suspended = true;
-        turn_off_is_rgb_enabled = rgb_matrix_is_enabled();
-        if(!readPin(IS_BLE) && turn_off_is_rgb_enabled){
+        if(!readPin(IS_BLE) && is_rgb_enabled){
             if (!isChrg){
                 rgb_matrix_disable_noeeprom();
             }
         }
     }else if (USB_DRIVER.state==USB_ACTIVE){
-    	if (is_usb_suspended && !turn_off_is_rgb_enabled){
+    	if (is_usb_suspended){
+            if(is_rgb_enabled){
+                rgb_matrix_enable_noeeprom();
+            }else{
+                rgb_matrix_disable_noeeprom();
+            }
             rgb_sleep_time = 0;
-            rgb_matrix_enable_noeeprom();
             uprintf("rgb_matrix_enable_noeeprom=1\n");
-            turn_off_is_rgb_enabled = true;
             is_usb_suspended = false;
         }
     }
