@@ -58,7 +58,12 @@ void analogg_bm1_init(void) {
 
 void analogg_bm1_task(void) {}
 
-void analogg_bm1_send_keyboard(report_keyboard_t *report) {}
+void analogg_bm1_send_keyboard(report_keyboard_t *report) {
+    LOG_Q_DEBUG("BLE send keyboard %02X, [%02X %02X %02X %02X %02X %02X]",
+        report->mods,
+        report->keys[0], report->keys[1], report->keys[2],
+        report->keys[3], report->keys[4], report->keys[5]);
+}
 
 void analogg_bm1_send_mouse(report_mouse_t *report) {}
 
@@ -216,7 +221,7 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
 
     // LOG_Q_DEBUG("mId=%d Id=%d err=%d %d",mSeqId,seqId,errCode,timer_read());
     if (mSeqId != seqId || errCode != 0) {
-        LOG_Q_INFO("errCode=%d\n", errCode);
+        LOG_Q_INFO("errCode=%d", errCode);
         ble_send_state = TX_START;
         return false;
     }
@@ -272,9 +277,8 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
                     logSize = LOG_SIZE;
                 }
                 memsets(log_buffer, 0, LOG_SIZE);
-                for (uint8_t i = 0; i < logSize; i++) {
-                    log_buffer[i] = data_package[17 + i];
-                }
+                memccpy(log_buffer, data_package + 17, 0, logSize);
+                log_buffer[logSize] = 0;
                 LOG_B_INFO("%s", log_buffer);
             }
 
