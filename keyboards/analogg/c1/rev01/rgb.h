@@ -4,16 +4,12 @@
 #pragma once
 #include QMK_KEYBOARD_H
 
-typedef enum {
-    BLE_LED_KEY_ONE = 0,
-    BLE_LED_KEY_ALL,
-    RGB_MATRIX_ANIMATION,
-} _rgb_matrix_indicator;
-
-extern _rgb_matrix_indicator rgb_matrix_indicator;
-
 void rgb_init(void);
-void rgb_wakeup(void);
-void rgb_sleep(void);
-void rgb_key_press_task(void);
-void rgb_sleep_timer_task(void);
+void rgb_sleep_wakeup(void);
+void rgb_sleep_sleep(void);
+void rgb_sleep_activity(void);
+void rgb_sleep_tick(uint16_t ms);
+void rgb_ble_tick(uint16_t ms);
+void rgb_ble_indicator_single_tunnel(uint8_t tunnel);
+void rgb_ble_indicator_show_all(void);
+void rgb_ble_indicator_exit(void);

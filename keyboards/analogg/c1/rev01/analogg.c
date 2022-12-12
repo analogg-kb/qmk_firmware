@@ -16,7 +16,6 @@
 #include "config.h"
 #include "keycode_config.h"
 
-extern bool last_rgb_enabled;
 static uint16_t time_count = 0;
 uint32_t timer_callback(uint32_t trigger_time, void *cb_arg);
 
@@ -92,8 +91,7 @@ void matrix_scan_kb(void) {
 }
 
 bool bm1_process_record_key(uint16_t keycode, keyrecord_t *record) {
-    rgb_key_press_task();
-    rgb_matrix_indicator = RGB_MATRIX_ANIMATION;
+    rgb_ble_indicator_exit();
     push_cmd(DATA_TYPE_DEFAULT_KEY, keycode, record->event.pressed);
     return false;
 }
@@ -109,7 +107,7 @@ bool bm1_process_record_function_key(uint16_t keycode, keyrecord_t *record) {
                 analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, keycode - BT_TN1 + 1);
                 break;
             case BT_STATE:
-                rgb_matrix_indicator = BLE_LED_KEY_ALL;
+                rgb_ble_indicator_show_all();
                 analogg_ble_send_cmd(DATA_TYPE_STATE);
                 break;
             default:
@@ -119,15 +117,9 @@ bool bm1_process_record_function_key(uint16_t keycode, keyrecord_t *record) {
     return false;
 }
 
-void rgb_save_current_state(bool state) {
-    last_rgb_enabled = state;
-}
-
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-    if (keycode == RGB_TOG && record->event.pressed) {
-        rgb_save_current_state(!rgb_matrix_is_enabled());
-    }
     LOG_Q_DEBUG("kc=%04x pressed=%d", keycode, record->event.pressed);
+    rgb_sleep_activity();
 
     // Process key directly when USB is connected
     if (IS_USB_DIP_ON()) {
@@ -168,7 +160,7 @@ void dip_ble_update_event(bool ble_active) {
 void timer_usb_mode(void) {
     if (is_usb_suspended) {
         led_indicator_set_black();
-        rgb_matrix_indicator = RGB_MATRIX_ANIMATION; // Turn on RGB matrix
+        rgb_ble_indicator_exit();
     }
 }
 
@@ -280,21 +272,22 @@ uint32_t timer_callback(uint32_t trigger_time, void *cb_arg) {
     bool is_ble_dip = timer_task_dip_ble_query();
     time_count++;
     if (time_count % T100MS == 0) {
-            long_pressed_event();
-            timer_task_charge_mode();
-            timer_task_caps_lock();
-            if (is_ble_dip) {
-                timer_task_update_ble_tunnel_indicator();
-                timer_task_ble_state_query();
-            }
-            timer_task_flush_led_indicator();
+        long_pressed_event();
+        timer_task_charge_mode();
+        timer_task_caps_lock();
+        if (is_ble_dip) {
+            timer_task_update_ble_tunnel_indicator();
+            timer_task_ble_state_query();
+        }
+        timer_task_flush_led_indicator();
+        rgb_ble_tick(100);
     }
     // if (time_count % T200MS == 0) { }
     // if (time_count % T400MS == 0) { }
     if (time_count % T1S == 0) {
         log_time++;
-        // rgb
-        rgb_sleep_timer_task();
+        // rgb sleep mode
+        rgb_sleep_tick(1000);
     }
     if (time_count % T2S == 0) {
             time_count = 0;
@@ -331,7 +324,7 @@ void long_pressed_event(void) {
                     analogg_ble_send_cmd_by_id(DATA_TYPE_UNPLUG, custom_keycode - BT_TN1 + 1);
                     break;
                 case BT_FTY:
-                    rgb_matrix_indicator = BLE_LED_KEY_ALL;
+                    rgb_ble_indicator_show_all();
                     analogg_ble_send_cmd(DATA_TYPE_DEFAULT);
                     analogg_ble_send_cmd(DATA_TYPE_STATE);
                     LOG_Q_INFO("Q:Restore factory mode");
@@ -379,18 +372,12 @@ void matrix_scan_usb_state(void) {
     // RGB disable when usb suspend
     if (USB_DRIVER.state == USB_SUSPENDED) {
         is_usb_suspended = true;
-        if (IS_USB_DIP_ON() && last_rgb_enabled) {
-            if (!is_chrg) {
-                rgb_sleep();
-            }
+        if (IS_USB_DIP_ON() && !is_chrg) {
+            rgb_sleep_sleep();
         }
     } else if (USB_DRIVER.state == USB_ACTIVE) {
         if (is_usb_suspended) {
-            if (last_rgb_enabled) {
-                rgb_wakeup();
-            } else {
-                rgb_sleep();
-            }
+            rgb_sleep_wakeup();
             is_usb_suspended = false;
         }
     }

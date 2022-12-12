@@ -6,50 +6,123 @@
 #include "analogg_bm1.h"
 #include "eeprom.h"
 
+#define RGB_SLEEP_TIMEOUT 180000  // 3 * 60 * 1000
 
-#define RGB_SLEEP_TIMEOUT 10
-uint16_t rgb_sleep_time = 0;
+typedef enum {
+    RGB_SLEEP_AWAKE = 0,
+    RGB_SLEEP_SLEEPPING = 1,
+    RGB_INDICATOR = 2,
+} rgb_sleep_state;
 
-bool last_rgb_enabled = false;
-_rgb_matrix_indicator rgb_matrix_indicator = RGB_MATRIX_ANIMATION;
+typedef struct {
+    uint32_t timeout;
+    uint32_t tick;
+    rgb_sleep_state state;
+} rgb_sleep_info;
+
+typedef enum {
+    RGB_BLE_INDICATOR_DISABLED = 0,
+    RGB_BLE_INDICATOR_SINGLE_TUNNEL,
+    RGB_BLE_INDICATOR_ALL_TUNNEL,
+} rgb_ble_indicator_state;
+
+typedef struct {
+    rgb_ble_indicator_state state;
+    uint16_t duration;
+    uint16_t timeout;   // 0 means no timeout
+} rgb_ble_indicator_info;
+
+rgb_sleep_info g_sleep_info = {0};
+rgb_ble_indicator_info g_rgb_ble_indicator_info = {0};
 
 
 void ble_state_show_by_rgb_matrix(uint8_t index, uint8_t state);
 
-
-void rgb_init(void) {
-    if (rgb_matrix_is_enabled()) {
-        last_rgb_enabled = true;
-    } else {
-        last_rgb_enabled = false;
-    }
+// RGB sleep control
+void rgb_sleep_init(void) {
+    g_sleep_info.timeout = RGB_SLEEP_TIMEOUT;
+    g_sleep_info.state = RGB_SLEEP_AWAKE;
+    g_sleep_info.tick = 0;
 }
 
-// sleep mode
-void rgb_sleep(void) {
+void rgb_sleep_wakeup(void) {
+    g_sleep_info.tick = 0;
+    g_sleep_info.state = RGB_SLEEP_AWAKE;
+    rgb_matrix_reload_from_eeprom();
+    LOG_Q_INFO("Keyboard wakeup.");
+}
+
+void rgb_sleep_sleep(void) {
+    g_sleep_info.state = RGB_SLEEP_SLEEPPING;
     rgb_matrix_disable_noeeprom();
     LOG_Q_INFO("Keyboard sleep.");
 }
 
-void rgb_wakeup(void) {
-    rgb_sleep_time = 0;
-    if (rgb_matrix_is_enabled()) {
-        return;
+void rgb_sleep_tick(uint16_t ms) {
+    if (g_sleep_info.state == RGB_SLEEP_AWAKE) {
+        g_sleep_info.tick += ms;
+        if (g_sleep_info.tick >= g_sleep_info.timeout) {
+            rgb_sleep_sleep();
+        }
     }
+}
+
+void rgb_sleep_activity(void) {
+    if (g_sleep_info.state == RGB_SLEEP_SLEEPPING) {
+        rgb_sleep_wakeup();
+    }
+    g_sleep_info.tick = 0;
+}
+
+// RGB BLE indicator control
+
+void rgb_ble_indicator_init(void) {
+    g_rgb_ble_indicator_info.state = RGB_BLE_INDICATOR_DISABLED;
+    g_rgb_ble_indicator_info.duration = 0;
+    g_rgb_ble_indicator_info.timeout = 0;
+}
+
+void rgb_ble_indicator_enter(void) {
+    g_rgb_ble_indicator_info.duration = 0;
     rgb_matrix_enable_noeeprom();
-    LOG_Q_INFO("Keyboard wakeup.");
+}
+
+void rgb_ble_indicator_exit(void) {
+    rgb_matrix_reload_from_eeprom();
+    g_rgb_ble_indicator_info.state = RGB_BLE_INDICATOR_DISABLED;
+}
+
+void rgb_ble_indicator_single_tunnel(uint8_t tunnel) {
+    g_rgb_ble_indicator_info.state = RGB_BLE_INDICATOR_SINGLE_TUNNEL;
+    rgb_ble_indicator_enter();
+
+}
+
+void rgb_ble_indicator_show_all(void) {
+    g_rgb_ble_indicator_info.state = RGB_BLE_INDICATOR_ALL_TUNNEL;
+    rgb_ble_indicator_enter();
+}
+
+void rgb_ble_tick(uint16_t ms) {
+}
+
+void rgb_init(void) {
+    rgb_sleep_init();
+    rgb_ble_indicator_init();
 }
 
 bool rgb_matrix_indicators_kb(void) {
     if (is_ble_work_state_input()) return false;
 
-    if (rgb_matrix_indicator == RGB_MATRIX_ANIMATION) return false;
+    if (g_rgb_ble_indicator_info.state == RGB_BLE_INDICATOR_DISABLED) {
+        return false;
+    }
 
     rgb_matrix_set_color_all(0, 0, 0);
-    if (rgb_matrix_indicator == BLE_LED_KEY_ONE) {
+    if (g_rgb_ble_indicator_info.state == RGB_BLE_INDICATOR_SINGLE_TUNNEL) {
         uint8_t index = tunnel - 1;
         ble_state_show_by_rgb_matrix(index, ble_tunnel_state.list[index]);
-    } else if (rgb_matrix_indicator == BLE_LED_KEY_ALL) {
+    } else if (g_rgb_ble_indicator_info.state == RGB_BLE_INDICATOR_ALL_TUNNEL) {
         for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++)
             ble_state_show_by_rgb_matrix(i, ble_tunnel_state.list[i]);
     }
@@ -96,24 +169,6 @@ void ble_state_show_by_rgb_matrix(uint8_t index, uint8_t state) {
         default:
             break;
     }
-}
-
-void rgb_sleep_timer_task(void) {
-    if (rgb_sleep_time < RGB_SLEEP_TIMEOUT) {
-        rgb_sleep_time++;
-        if (rgb_sleep_time == RGB_SLEEP_TIMEOUT) {
-            rgb_matrix_disable_noeeprom();
-        }
-    }
-}
-
-void rgb_key_press_task(void) {
-    if (last_rgb_enabled) {
-        rgb_wakeup();
-    } else {
-        rgb_sleep();
-    }
-    rgb_sleep_time = 0;
 }
 
 // clang-format off

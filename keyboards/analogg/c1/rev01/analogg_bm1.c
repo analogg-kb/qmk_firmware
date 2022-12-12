@@ -92,8 +92,8 @@ void analogg_ble_send_cmd(uint8_t type) {
 }
 
 void analogg_ble_send_cmd_by_id(uint8_t type, uint8_t tunnel_id) {
-    rgb_matrix_indicator = BLE_LED_KEY_ONE;
-    tunnel               = tunnel_id;
+    tunnel = tunnel_id;
+    rgb_ble_indicator_single_tunnel(tunnel_id);
     push_cmd(type, tunnel_id, false);
 }
 
