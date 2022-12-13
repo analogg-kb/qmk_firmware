@@ -22,9 +22,6 @@
 // Disable DIP switch in matrix data
 #define MATRIX_MASKED
 
-// Battery config
-#define BATTERY_LEVEL_PORT A4
-
 // RGB indicator config
 // WS2812
 #define RGB_DI_PIN A3

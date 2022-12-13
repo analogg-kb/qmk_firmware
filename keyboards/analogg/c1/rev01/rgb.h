@@ -13,3 +13,4 @@ void rgb_ble_tick(uint16_t ms);
 void rgb_ble_indicator_single_tunnel(uint8_t tunnel);
 void rgb_ble_indicator_show_all(void);
 void rgb_ble_indicator_exit(void);
+bool rgb_sleep_is_sleep(void);

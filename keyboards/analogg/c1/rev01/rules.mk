@@ -10,3 +10,4 @@ SRC += rgb.c
 SRC += led_indicator.c
 SRC += analog.c
 SRC += analogg.c
+SRC += battery_manager.c

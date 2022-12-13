@@ -43,15 +43,7 @@ enum keyboard_keycodes {
 // #define  BT_TN6   BT_TUNNEL6
 // #define  BT_TN7   BT_TUNNEL7
 // #define  BT_TN8   BT_TUNNEL8
-#define BT_FTY BT_DEFAULT
-
-/** battery
-    25%=3.72(1.86)  %50=3.79(1.895)  75%=3.93(1.965)  100%=4.2(2.1)
-    x = (4.2/2)/3.3 * 1024 = 652
-*/
-#define BATTERY_RSOC_0 555
-#define BATTERY_RSOC_AREA 97.00f
-#define UPDATE_BATTERY_TIME 100  //10S     
+#define BT_FTY BT_DEFAULT 
 
 #define TIMER_BASE_TIME 10 // TIMER_BASE_TIME
 #define T50MS 5            // 50MS = T100MS*TIMER_BASE_TIME

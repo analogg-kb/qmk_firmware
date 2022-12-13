@@ -7,10 +7,10 @@
 
 #include "analogg_bm1.h"
 #include <ctype.h>
-#include "analog.h"
 #include "analogg.h"
 #include "led_indicator.h"
 #include "rgb.h"
+#include "battery_manager.h"
 
 #include "chtime.h"
 #include "config.h"
@@ -35,7 +35,6 @@ const matrix_row_t matrix_mask[] = {
 };
 // clang-format on
 bool     is_usb_suspended         = false;
-// Charging light readed count
 
 // Long press monitor
 bool     custom_pressed           = false;
@@ -47,35 +46,14 @@ uint16_t log_time                 = 0;
 
 protocol_cmd pop_protocol_cmd = {0};
 
-typedef enum {
-    UNCHARGED = 0,
-    CHARGING = 1,
-}_charge_state;
-
-typedef enum {
-    DEBOUNCE_TIMEOUT = 60,
-}_debounce_state;
-
-typedef struct {
-    uint16_t chrg_count;
-    _charge_state state;
-    _debounce_state debounce_state;
-    uint32_t debounce_timeout;
-    uint32_t debounce_tick;
-} _charge_info;
-
-_charge_info charge_info = {0,UNCHARGED,0,0,0};
-
 bool timer_task_dip_ble_query(void);
 bool timer_task_dip_ble_query(void);
 void long_pressed_event(void);
 bool uart_tx_data_handle(void);
-void matrix_scan_charge_state(void);
 void matrix_scan_uart_recv(void);
 void matrix_scan_usb_state(void);
 bool dip_switch_update_kb(uint8_t index, bool active);
 void dip_ble_update_event(bool ble_active);
-uint8_t battery_query_level(void);
 void timer_task_update_battery_level(void);
 
 void battery_board_init(void) {
@@ -100,7 +78,7 @@ void keyboard_post_init_kb(void) {
 }
 
 void matrix_scan_kb(void) {
-    matrix_scan_charge_state();
+    charge_task_scan_state_and_tick();
     matrix_scan_uart_recv();
     matrix_scan_usb_state();
     matrix_scan_user();
@@ -170,6 +148,7 @@ void dip_ble_update_event(bool ble_active) {
     LOG_Q_INFO("Switch BLE = %d", ble_active);
     if (!ble_active) {
         bm1_reset();
+        rgb_ble_indicator_exit();
     }
 }
 
@@ -186,34 +165,6 @@ void timer_task_update_ble_tunnel_indicator(void) {
     if (state == CONNECTED || state == CONNECTED_AND_ACTIVE) {
         led_indicator_set_ble_to(ble_tunnel_state.current_tunnel);
     }
-}
-
-// TODO: Led1 should turn off when the usb is unplugged
-void timer_task_charge_mode(void) {
-    // Ensure that the charging light is on for more than 30 times
-    if (charge_info.chrg_count > 30) {
-        charge_info.state = CHARGING;
-        led_indicator_set_power_pwm(true);
-    }
-    charge_info.chrg_count = 0; 
-}
-
-void charge_task_tick(void){
-    charge_info.debounce_tick++;
-    //TODO ...
-}
-
-uint8_t battery_query_level(void) {
-    uint16_t bl = analogReadPin(BATTERY_LEVEL_PORT);
-    uint8_t chrg_rsoc = (uint8_t)(((float)(bl - BATTERY_RSOC_0) / BATTERY_RSOC_AREA) * 100);
-    if (chrg_rsoc > 100) {
-        chrg_rsoc = 100;
-    }
-    if (chrg_rsoc < 0) {
-        chrg_rsoc = 0;
-    }
-
-    return chrg_rsoc;
 }
 
 void timer_task_update_battery_level(void) {
@@ -296,7 +247,8 @@ uint32_t timer_callback(uint32_t trigger_time, void *cb_arg) {
     if (time_count % T100MS == 0) {
         long_pressed_event();
         timer_task_update_battery_level();
-        timer_task_charge_mode();
+        charge_task_delay_debounce_tick();
+        led_indicator_set_power_pwm(charge_task_is_charging());
         timer_task_caps_lock();
         if (is_ble_dip) {
             timer_task_update_ble_tunnel_indicator();
@@ -320,7 +272,11 @@ uint32_t timer_callback(uint32_t trigger_time, void *cb_arg) {
     if (is_ble_dip) {
         timer_ble_mode();
     }
-    timer_task_flush_led_indicator();
+    if(rgb_sleep_is_sleep()) {
+        led_indicator_set_sleep();
+    } else {
+        timer_task_flush_led_indicator();
+    }
     return TIMER_BASE_TIME;
 }
 
@@ -375,15 +331,6 @@ bool uart_tx_data_handle(void) {
     return false;
 }
 
-void matrix_scan_charge_state(void) {
-    if (!readPin(IS_CHRG_PIN)) {
-        charge_info.chrg_count++;
-    } else {
-        charge_info.state = UNCHARGED;
-        charge_info.chrg_count = 0;
-    }
-}
-
 void matrix_scan_uart_recv(void) {
     while (!sdGetWouldBlock(&SD1)) {
         analogg_ble_resolve_protocol(sdGet(&SD1));
@@ -394,7 +341,7 @@ void matrix_scan_usb_state(void) {
     // RGB disable when usb suspend
     if (USB_DRIVER.state == USB_SUSPENDED) {
         is_usb_suspended = true;
-        if (IS_USB_DIP_ON() && charge_info.state == UNCHARGED) {
+        if (IS_USB_DIP_ON() && !charge_task_is_charging()) {
             rgb_sleep_sleep();
         }
     } else if (USB_DRIVER.state == USB_ACTIVE) {

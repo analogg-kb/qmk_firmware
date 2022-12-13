@@ -31,9 +31,6 @@ void analogg_bm1_send_consumer(uint16_t usage);
 #define IS_BLE_DIP_ON() (readPin(IS_BLE_PIN) != 0)
 #define IS_USB_DIP_ON() (readPin(IS_BLE_PIN) == 0)
 
-#ifndef IS_CHRG_PIN
-#    define IS_CHRG_PIN A6    // 1 = full 0 change  1 0  no battery
-#endif
 #ifndef PIO11_WAKEUP
 #    define PIO11_WAKEUP A5    // input(wakeup control): use it with (AT+SLEEPMODE!=0)
 #endif

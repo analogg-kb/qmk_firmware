@@ -16,6 +16,7 @@ typedef struct {
     LED_TYPE battery_level;
 } _led_indicator;
 
+void led_indicator_set_power(uint8_t r, uint8_t g, uint8_t b);
 void led_indicator_set_power_pwm(bool isChrg);
 void led_indicator_set_ble(uint8_t r, uint8_t g, uint8_t b);
 void led_indicator_set_caps_lock(uint8_t r, uint8_t g, uint8_t b);

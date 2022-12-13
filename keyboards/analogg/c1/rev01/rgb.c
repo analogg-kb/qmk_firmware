@@ -52,6 +52,13 @@ void rgb_sleep_wakeup(void) {
     LOG_Q_INFO("Keyboard wakeup.");
 }
 
+bool rgb_sleep_is_sleep(void) {
+    if(g_sleep_info.state == RGB_SLEEP_SLEEPPING) {
+         return true;
+    }
+    return false;
+}
+
 void rgb_sleep_sleep(void) {
     g_sleep_info.state = RGB_SLEEP_SLEEPPING;
     rgb_matrix_disable_noeeprom();
