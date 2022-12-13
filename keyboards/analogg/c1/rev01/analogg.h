@@ -51,13 +51,15 @@ enum keyboard_keycodes {
 */
 #define BATTERY_RSOC_0 555
 #define BATTERY_RSOC_AREA 97.00f
+#define UPDATE_BATTERY_TIME 100  //10S     
 
 #define TIMER_BASE_TIME 10 // TIMER_BASE_TIME
-#define T100MS 10          // TIMER_DELAY*BLE_INDICATOR_100MS
-#define T200MS 20          // TIMER_DELAY*BLE_TUNNEL_LED_250MS
-#define T400MS 40          // TIMER_DELAY*BLE_TUNNEL_LED_500MS
-#define T1S 100            // TIMER_DELAY*BLE_TUNNEL_LED_1S
-#define T2S 200            // TIMER_DELAY*BLE_TUNNEL_LED_2S
+#define T50MS 5            // 50MS = T100MS*TIMER_BASE_TIME
+#define T100MS 10          // 100MS
+#define T200MS 20          // 200MS
+#define T400MS 40          // 400MS
+#define T1S 100            // 1S
+#define T2S 200            // 2S
 
 #define LONG_PRESSED_TIME 3000
 

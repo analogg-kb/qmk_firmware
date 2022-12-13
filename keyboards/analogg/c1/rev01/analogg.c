@@ -34,11 +34,9 @@ const matrix_row_t matrix_mask[] = {
     0b111111111011111,
 };
 // clang-format on
-
 bool     is_usb_suspended         = false;
-bool     is_chrg                  = false;
 // Charging light readed count
-uint8_t  chrg_count               = 0;
+
 // Long press monitor
 bool     custom_pressed           = false;
 uint16_t custom_keycode           = KC_NO;
@@ -49,6 +47,24 @@ uint16_t log_time                 = 0;
 
 protocol_cmd pop_protocol_cmd = {0};
 
+typedef enum {
+    UNCHARGED = 0,
+    CHARGING = 1,
+}_charge_state;
+
+typedef enum {
+    DEBOUNCE_TIMEOUT = 60,
+}_debounce_state;
+
+typedef struct {
+    uint16_t chrg_count;
+    _charge_state state;
+    _debounce_state debounce_state;
+    uint32_t debounce_timeout;
+    uint32_t debounce_tick;
+} _charge_info;
+
+_charge_info charge_info = {0,UNCHARGED,0,0,0};
 
 bool timer_task_dip_ble_query(void);
 bool timer_task_dip_ble_query(void);
@@ -60,7 +76,7 @@ void matrix_scan_usb_state(void);
 bool dip_switch_update_kb(uint8_t index, bool active);
 void dip_ble_update_event(bool ble_active);
 uint8_t battery_query_level(void);
-
+void timer_task_update_battery_level(void);
 
 void battery_board_init(void) {
     setPinInput(IS_CHRG_PIN);
@@ -159,7 +175,7 @@ void dip_ble_update_event(bool ble_active) {
 
 void timer_usb_mode(void) {
     if (is_usb_suspended) {
-        led_indicator_set_black();
+        led_indicator_usb_suspended();
         rgb_ble_indicator_exit();
     }
 }
@@ -175,23 +191,29 @@ void timer_task_update_ble_tunnel_indicator(void) {
 // TODO: Led1 should turn off when the usb is unplugged
 void timer_task_charge_mode(void) {
     // Ensure that the charging light is on for more than 30 times
-    if (chrg_count > 30) {
-        is_chrg = true;
+    if (charge_info.chrg_count > 30) {
+        charge_info.state = CHARGING;
+        led_indicator_set_power_pwm(true);
     }
-    chrg_count = 0;
-    led_indicator_set_power_pwm(is_chrg);
+    charge_info.chrg_count = 0; 
+}
+
+void charge_task_tick(void){
+    charge_info.debounce_tick++;
+    //TODO ...
 }
 
 uint8_t battery_query_level(void) {
     uint16_t bl = analogReadPin(BATTERY_LEVEL_PORT);
-    float chrg_rsoc   = (float)(bl - BATTERY_RSOC_0) / BATTERY_RSOC_AREA * 100.0;
+    uint8_t chrg_rsoc = (uint8_t)(((float)(bl - BATTERY_RSOC_0) / BATTERY_RSOC_AREA) * 100);
     if (chrg_rsoc > 100) {
         chrg_rsoc = 100;
     }
     if (chrg_rsoc < 0) {
         chrg_rsoc = 0;
     }
-    return (uint8_t)chrg_rsoc;
+
+    return chrg_rsoc;
 }
 
 void timer_task_update_battery_level(void) {
@@ -223,7 +245,7 @@ void timer_task_ble_state_query(void) {
         analogg_ble_send_cmd(DATA_TYPE_STATE);
         // Update battery level every 1 minutes
         bt_log_time_count++;
-        if (bt_log_time_count > 600) {
+        if (bt_log_time_count > UPDATE_BATTERY_TIME) {
             uint8_t chrg_rsoc = battery_query_level();
             bt_log_time_count = 0;
             analogg_ble_send_cmd_by_val(DATA_TYPE_BATTERY_LEVEL, chrg_rsoc);
@@ -273,13 +295,15 @@ uint32_t timer_callback(uint32_t trigger_time, void *cb_arg) {
     time_count++;
     if (time_count % T100MS == 0) {
         long_pressed_event();
+        timer_task_update_battery_level();
         timer_task_charge_mode();
         timer_task_caps_lock();
         if (is_ble_dip) {
             timer_task_update_ble_tunnel_indicator();
             timer_task_ble_state_query();
+        }else{
+            timer_usb_mode();
         }
-        timer_task_flush_led_indicator();
         rgb_ble_tick(100);
     }
     // if (time_count % T200MS == 0) { }
@@ -290,14 +314,13 @@ uint32_t timer_callback(uint32_t trigger_time, void *cb_arg) {
         rgb_sleep_tick(1000);
     }
     if (time_count % T2S == 0) {
-            time_count = 0;
+        time_count = 0;
     }
     // For whole time
-    if (IS_USB_DIP_ON()) {
-        timer_usb_mode();
-    } else {
+    if (is_ble_dip) {
         timer_ble_mode();
     }
+    timer_task_flush_led_indicator();
     return TIMER_BASE_TIME;
 }
 
@@ -354,11 +377,10 @@ bool uart_tx_data_handle(void) {
 
 void matrix_scan_charge_state(void) {
     if (!readPin(IS_CHRG_PIN)) {
-        is_chrg = true;
-        chrg_count++;
+        charge_info.chrg_count++;
     } else {
-        is_chrg    = false;
-        chrg_count = 0;
+        charge_info.state = UNCHARGED;
+        charge_info.chrg_count = 0;
     }
 }
 
@@ -372,7 +394,7 @@ void matrix_scan_usb_state(void) {
     // RGB disable when usb suspend
     if (USB_DRIVER.state == USB_SUSPENDED) {
         is_usb_suspended = true;
-        if (IS_USB_DIP_ON() && !is_chrg) {
+        if (IS_USB_DIP_ON() && charge_info.state == UNCHARGED) {
             rgb_sleep_sleep();
         }
     } else if (USB_DRIVER.state == USB_ACTIVE) {

@@ -388,7 +388,6 @@ bool is_tx_idle(void) {
     if (bufferCount == 0 && ble_send_state == TX_IDLE) {
         return true;
     }
-
     return false;
 }
 

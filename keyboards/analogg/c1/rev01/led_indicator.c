@@ -28,15 +28,24 @@ void led_indicator_set_ble_to(uint8_t tunnel) {
     }
 }
 
-void led_indicator_set_black(void) {
-    led_indicator.power         = indicator_set_rgb(RGB_WHITE);
+void led_indicator_set_sleep(void) {
+    led_indicator.power         = indicator_set_rgb(RGB_BLACK);
     led_indicator.ble           = indicator_set_rgb(RGB_BLACK);
     led_indicator.caps_lock     = indicator_set_rgb(RGB_BLACK);
     led_indicator.battery_level = indicator_set_rgb(RGB_BLACK);
     rgblite_setrgb(led_indicator);
 }
 
+void led_indicator_usb_suspended(void){
+    led_indicator.ble           = indicator_set_rgb(RGB_BLACK);
+    led_indicator.caps_lock     = indicator_set_rgb(RGB_RED);
+}
+
 static uint8_t rgb_pwm_inc = 0, rgb_pwm_dec = 0;
+
+void led_indicator_set_power(uint8_t r, uint8_t g, uint8_t b) {
+    led_indicator.power = indicator_set_rgb(r, g, b);
+}
 
 void led_indicator_set_power_pwm(bool isChrg) {
     if (isChrg) {
@@ -56,10 +65,6 @@ void led_indicator_set_power_pwm(bool isChrg) {
     } else {
         led_indicator_set_power(RGB_WHITE);
     }
-}
-
-void led_indicator_set_power(uint8_t r, uint8_t g, uint8_t b) {
-    led_indicator.power = indicator_set_rgb(r, g, b);
 }
 
 void led_indicator_set_ble(uint8_t r, uint8_t g, uint8_t b) {
