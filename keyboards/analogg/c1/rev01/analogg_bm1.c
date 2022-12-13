@@ -254,16 +254,16 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
              * dataLen = 0x0A  ble state
              * dataLen > 0x0A  ble state + log
              */
-            if (IS_BLE_DIP_ON()) {
-                if (!is_kb_startup) {
-                    is_kb_startup  = true;
-                    uint8_t tunnel = eeprom_read_byte(EE_ANALOGG_LINK_ID);
-                    if (tunnel == 0 || tunnel > BLE_TUNNEL_NUM) {
-                        tunnel = 1;
-                    }
-                    analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, tunnel);
-                }
-            }
+            // if (IS_BLE_DIP_ON()) {
+            //     if (!is_kb_startup) {
+            //         is_kb_startup  = true;
+            //         uint8_t tunnel = eeprom_read_byte(EE_ANALOGG_LINK_ID);
+            //         if (tunnel == 0 || tunnel > BLE_TUNNEL_NUM) {
+            //             tunnel = 1;
+            //         }
+            //         analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, tunnel);
+            //     }
+            // }
 
             ble_tunnel_state.current_tunnel = data_package[8];
             for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++) {

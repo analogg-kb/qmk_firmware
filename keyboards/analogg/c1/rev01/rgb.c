@@ -168,10 +168,10 @@ void ble_state_show_by_rgb_matrix(uint8_t index, uint8_t state) {
         case CONNECTED_AND_ACTIVE:
             rgb_matrix_set_color(index, RGB_BLUE);
 
-            if (last_save_tunnel != tunnel) {
-                last_save_tunnel = tunnel;
-                eeprom_write_byte(EE_ANALOGG_LINK_ID, tunnel);
-            }
+            // if (last_save_tunnel != tunnel) {
+            //     last_save_tunnel = tunnel;
+            //     eeprom_write_byte(EE_ANALOGG_LINK_ID, tunnel);
+            // }
             break;
         default:
             break;

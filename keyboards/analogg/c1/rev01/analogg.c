@@ -119,13 +119,12 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     if (IS_USB_DIP_ON()) {
         return process_record_user(keycode, record);
     }
-
     // Process key when BLE is connected
     switch (keycode) {
         case KC_A ... 0xFF:
-            return bm1_process_record_key(keycode, record);
+             bm1_process_record_key(keycode, record);
         case BT_TN1 ... BT_FTY:
-            return bm1_process_record_function_key(keycode, record);
+             bm1_process_record_function_key(keycode, record);
         default:
             return process_record_user(keycode, record);
     }
