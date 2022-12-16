@@ -122,9 +122,9 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     // Process key when BLE is connected
     switch (keycode) {
         case KC_A ... 0xFF:
-             bm1_process_record_key(keycode, record);
+            return bm1_process_record_key(keycode, record);
         case BT_TN1 ... BT_FTY:
-             bm1_process_record_function_key(keycode, record);
+            return bm1_process_record_function_key(keycode, record);
         default:
             return process_record_user(keycode, record);
     }
