@@ -127,14 +127,15 @@ bool rgb_matrix_indicators_kb(void) {
 
     rgb_matrix_set_color_all(0, 0, 0);
     if (g_rgb_ble_indicator_info.state == RGB_BLE_INDICATOR_SINGLE_TUNNEL) {
-        uint8_t index = tunnel - 1;
-        ble_state_show_by_rgb_matrix(index, ble_tunnel_state.list[index]);
+        uint8_t index = get_op_tunnel() - 1;
+        ble_state_show_by_rgb_matrix(index, get_ble_tunnel_state_to(index));
     } else if (g_rgb_ble_indicator_info.state == RGB_BLE_INDICATOR_ALL_TUNNEL) {
         for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++)
-            ble_state_show_by_rgb_matrix(i, ble_tunnel_state.list[i]);
+            ble_state_show_by_rgb_matrix(i, get_ble_tunnel_state_to(i));
     }
     return true;
 }
+
 void ble_state_show_by_rgb_matrix(uint8_t index, uint8_t state) {
     index += 31;
     switch (state) {

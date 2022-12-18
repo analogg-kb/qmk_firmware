@@ -86,6 +86,11 @@ void matrix_scan_kb(void) {
 
 bool bm1_process_record_key(uint16_t keycode, keyrecord_t *record) {
     rgb_ble_indicator_exit();
+
+    if(get_ble_activity_tunnel_state()!=CONNECTED_AND_ACTIVE){
+        return false;
+    }
+
     push_cmd(DATA_TYPE_DEFAULT_KEY, keycode, record->event.pressed);
     return false;
 }
@@ -159,10 +164,10 @@ void timer_usb_mode(void) {
 }
 
 void timer_task_update_ble_tunnel_indicator(void) {
-    uint8_t state = ble_tunnel_state.list[ble_tunnel_state.current_tunnel];
+    uint8_t state = get_ble_activity_tunnel_state();
     // ble led state
     if (state == CONNECTED || state == CONNECTED_AND_ACTIVE) {
-        led_indicator_set_ble_to(ble_tunnel_state.current_tunnel);
+        led_indicator_set_ble_to(get_activity_tunnel());
     }
 }
 
@@ -204,16 +209,16 @@ void timer_task_ble_state_query(void) {
 }
 
 void timer_task_ble_indicator_blink(void) {
-    uint8_t state = ble_tunnel_state.list[ble_tunnel_state.current_tunnel];
+    uint8_t state = get_ble_activity_tunnel_state();
     if (state == ADV_WAIT_CONNECTING_ACTIVE) {
         if (time_count % T200MS == 0) {
-            led_indicator_set_ble_to(ble_tunnel_state.current_tunnel);
+            led_indicator_set_ble_to(get_activity_tunnel());
         } else if (time_count % T400MS == 0) {
             led_indicator_set_ble(RGB_BLACK);
         }
     } else if (state == IDLE || state == ADV_WAIT_CONNECTING || state == ADV_WAIT_CONNECTING_INACTIVE) {
         if (time_count % T1S == 0) {
-            led_indicator_set_ble_to(ble_tunnel_state.current_tunnel);
+            led_indicator_set_ble_to(get_activity_tunnel());
         } else if (time_count % T2S == 0) {
             led_indicator_set_ble(RGB_BLACK);
         }
@@ -227,7 +232,7 @@ void timer_task_flush_led_indicator(void) {
 }
 
 void timer_ble_mode(void) {
-    switch (ble_send_state) {
+    switch (get_ble_send_state()) {
         case TX_IDLE:
             uart_tx_data_handle();
             break;
@@ -235,7 +240,7 @@ void timer_ble_mode(void) {
             analogg_ble_cmd_tx(++mSeqId);
             break;
         default:
-            ble_send_state++;
+            ble_send_state_tick();
             break;
     }
 }
@@ -270,6 +275,7 @@ uint32_t timer_callback(uint32_t trigger_time, void *cb_arg) {
     // For whole time
     if (is_ble_dip) {
         timer_ble_mode();
+        timer_task_ble_indicator_blink();
     }
     if(rgb_sleep_is_sleep()) {
         led_indicator_set_sleep();
@@ -318,8 +324,8 @@ void long_pressed_event(void) {
 
 
 bool uart_tx_data_handle(void) {
-    if (ble_send_state == TX_IDLE && bufferPop(&pop_protocol_cmd)) {
-        ble_send_state = TX_START;
+    if (get_ble_send_state() == TX_IDLE && bufferPop(&pop_protocol_cmd)) {
+        set_ble_send_state(TX_START);
         if (pop_protocol_cmd.type == DATA_TYPE_DEFAULT_KEY) {
             analogg_ble_keycode_handle(pop_protocol_cmd);
         } else {
