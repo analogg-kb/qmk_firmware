@@ -118,7 +118,7 @@ bool bm1_process_record_function_key(uint16_t keycode, keyrecord_t *record) {
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     LOG_Q_DEBUG("kc=%04x pressed=%d", keycode, record->event.pressed);
-    rgb_sleep_activity();
+    rgb_sleep_activity(keycode);
 
     // Process key directly when USB is connected
     if (IS_USB_DIP_ON()) {

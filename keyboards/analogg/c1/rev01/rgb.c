@@ -6,7 +6,7 @@
 #include "analogg_bm1.h"
 #include "eeprom.h"
 
-#define RGB_SLEEP_TIMEOUT 180000  // 3 * 60 * 1000
+#define RGB_SLEEP_TIMEOUT 30000  // 3 * 60 * 1000
 
 typedef enum {
     RGB_SLEEP_AWAKE = 0,
@@ -18,6 +18,7 @@ typedef struct {
     uint32_t timeout;
     uint32_t tick;
     rgb_sleep_state state;
+    bool rgb_last_enable;
 } rgb_sleep_info;
 
 typedef enum {
@@ -43,12 +44,22 @@ void rgb_sleep_init(void) {
     g_sleep_info.timeout = RGB_SLEEP_TIMEOUT;
     g_sleep_info.state = RGB_SLEEP_AWAKE;
     g_sleep_info.tick = 0;
+    g_sleep_info.rgb_last_enable = rgb_matrix_is_enabled();
 }
+
+void rgb_restore_last_state(void) {
+    if(g_sleep_info.rgb_last_enable) {
+        rgb_matrix_is_enabled() ? NULL : rgb_matrix_enable_noeeprom();
+    } else {
+        rgb_matrix_is_enabled() ? rgb_matrix_disable_noeeprom() : NULL;
+    }
+}
+
 
 void rgb_sleep_wakeup(void) {
     g_sleep_info.tick = 0;
     g_sleep_info.state = RGB_SLEEP_AWAKE;
-    rgb_matrix_reload_from_eeprom();
+    rgb_restore_last_state();
     LOG_Q_INFO("Keyboard wakeup.");
 }
 
@@ -74,7 +85,11 @@ void rgb_sleep_tick(uint16_t ms) {
     }
 }
 
-void rgb_sleep_activity(void) {
+void rgb_sleep_activity(uint16_t keycode) {
+    if (keycode == RGB_TOG) {
+        g_sleep_info.rgb_last_enable = !rgb_matrix_is_enabled();
+    }
+    
     if (g_sleep_info.state == RGB_SLEEP_SLEEPPING) {
         rgb_sleep_wakeup();
     }
@@ -95,7 +110,7 @@ void rgb_ble_indicator_enter(void) {
 }
 
 void rgb_ble_indicator_exit(void) {
-    rgb_matrix_reload_from_eeprom();
+    rgb_restore_last_state();
     g_rgb_ble_indicator_info.state = RGB_BLE_INDICATOR_DISABLED;
 }
 
