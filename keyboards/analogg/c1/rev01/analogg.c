@@ -49,7 +49,7 @@ protocol_cmd pop_protocol_cmd = {0};
 bool timer_task_dip_ble_query(void);
 bool timer_task_dip_ble_query(void);
 void long_pressed_event(void);
-bool uart_tx_data_handle(void);
+bool analogg_ble_cmd_handle(void);
 void matrix_scan_uart_recv(void);
 void matrix_scan_usb_state(void);
 bool dip_switch_update_kb(uint8_t index, bool active);
@@ -84,18 +84,18 @@ void matrix_scan_kb(void) {
     matrix_scan_user();
 }
 
-bool bm1_process_record_key(uint16_t keycode, keyrecord_t *record) {
+void bm1_process_record_key(uint16_t keycode, keyrecord_t *record) {
     rgb_ble_indicator_exit();
 
-    if(get_ble_activity_tunnel_state()!=CONNECTED_AND_ACTIVE){
-        return false;
+    if(get_ble_activity_tunnel_state()!=CONNECTED_AND_ACTIVE) {
+        LOG_Q_DEBUG("send cmd fail");
+        return;
     }
 
-    push_cmd(DATA_TYPE_DEFAULT_KEY, keycode, record->event.pressed);
-    return false;
+    analogg_ble_send_key(DATA_TYPE_DEFAULT_KEY, keycode, record->event.pressed);
 }
 
-bool bm1_process_record_function_key(uint16_t keycode, keyrecord_t *record) {
+void bm1_process_record_function_key(uint16_t keycode, keyrecord_t *record) {
     custom_keycode = keycode;
     custom_pressed = record->event.pressed;
     if (record->event.pressed) {
@@ -113,11 +113,10 @@ bool bm1_process_record_function_key(uint16_t keycode, keyrecord_t *record) {
                 break;
         }
     }
-    return false;
 }
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-    LOG_Q_DEBUG("kc=%04x pressed=%d", keycode, record->event.pressed);
+    LOG_Q_DEBUG("kc=%04x pressed=%d bt=%d ts=%d", keycode, record->event.pressed,get_buffer_size(),is_tx_idle()); 
     rgb_sleep_activity(keycode);
 
     // Process key directly when USB is connected
@@ -127,12 +126,15 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     // Process key when BLE is connected
     switch (keycode) {
         case KC_A ... 0xFF:
-            return bm1_process_record_key(keycode, record);
+            bm1_process_record_key(keycode, record);
+            break;
         case BT_TN1 ... BT_FTY:
-            return bm1_process_record_function_key(keycode, record);
+            bm1_process_record_function_key(keycode, record);
+            break;
         default:
             return process_record_user(keycode, record);
     }
+    return false;
 }
 
 static uint16_t bt_log_time_count = 0;
@@ -234,10 +236,10 @@ void timer_task_flush_led_indicator(void) {
 void timer_ble_mode(void) {
     switch (get_ble_send_state()) {
         case TX_IDLE:
-            uart_tx_data_handle();
+            analogg_ble_cmd_handle();
             break;
         case TX_TIMEOUT:
-            analogg_ble_cmd_tx(++mSeqId);
+            analogg_ble_cmd_tx_timeout();
             break;
         default:
             ble_send_state_tick();
@@ -322,10 +324,9 @@ void long_pressed_event(void) {
     }
 }
 
-
-bool uart_tx_data_handle(void) {
+bool analogg_ble_cmd_handle(void) {
     if (get_ble_send_state() == TX_IDLE && bufferPop(&pop_protocol_cmd)) {
-        set_ble_send_state(TX_START);
+        // set_ble_send_state(TX_START);
         if (pop_protocol_cmd.type == DATA_TYPE_DEFAULT_KEY) {
             analogg_ble_keycode_handle(pop_protocol_cmd);
         } else {

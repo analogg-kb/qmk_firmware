@@ -10,13 +10,21 @@
 
 uint8_t op_tunnel           = 1;
 // uint8_t last_save_tunnel = 1;
+volatile uint8_t  mSeqId; // 0-255
 
 _ble_work_state   ble_work_state = INPUT_MODE;
-_ble_send_state   ble_send_state = TX_IDLE;
+static uint16_t   ble_send_state = TX_IDLE;
 _ble_tunnel_state ble_tunnel_state;
 bool              is_kb_startup = false;
 
-void bm1_clear_buffer(void);
+uint8_t  memsets(uint8_t *buff, int value, int len);
+void     resetGetData(void);
+uint16_t get_buffer_size(void);
+void     bm1_clear_buffer(void);
+void     clear_keycode_buffer(void);
+void     bufferPush(protocol_cmd _buf);
+void     general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t *bleData);
+void     analogg_ble_reset_leds(void);
 
 static const SerialConfig ble_uart_config = {
     .speed = 115200 // 921600
@@ -36,7 +44,7 @@ uint8_t get_activity_tunnel(void) {
     return ble_tunnel_state.activity_tunnel;
 }
 
-_ble_send_state get_ble_send_state(void) {
+uint16_t get_ble_send_state(void) {
     return ble_send_state;
 }
 
@@ -73,6 +81,31 @@ bool is_ble_work_state_input(void) {
 }
 
 /* -------------------- Public Function Implementation ---------------------- */
+void push_cmd(uint8_t type, uint16_t keycode, bool pressed) {
+    switch (type) {
+        case DATA_TYPE_DEFAULT_KEY:
+            if (!is_ble_work_state_input()) {
+                set_ble_work_state(WAIT_INPUT_MODE);
+                // bm1_clear_buffer();
+            }
+            break;
+        case DATA_TYPE_STATE: //must be
+            break;
+        default:
+            if (is_ble_work_state() == INPUT_MODE) {
+                set_ble_work_state(WAIT_CONFIG_MODE);
+            }
+            break;
+    }
+    
+    protocol_cmd protocol_cmd_new = {type, keycode, pressed};
+    bufferPush(protocol_cmd_new);
+}
+
+void analogg_ble_send_key(uint8_t type, uint16_t keycode, bool pressed) {
+    push_cmd(type, keycode, pressed);
+}
+
 void analogg_ble_send_cmd(uint8_t type) {
     push_cmd(type, 0, false);
 }
@@ -85,10 +118,6 @@ void analogg_ble_send_cmd_by_id(uint8_t type, uint8_t tunnel_id) {
 
 void analogg_ble_send_cmd_by_val(uint8_t type, uint8_t val) {
     push_cmd(type, val, false);
-}
-
-void analogg_ble_disconnect(void) {
-    clear_keyboard();
 }
 
 void analogg_ble_reset_leds() {
@@ -106,23 +135,6 @@ unsigned char memsets(unsigned char *buff, int value, int len) {
     }
     return TRUE;
 }
-
-void push_cmd(uint8_t type, uint16_t keycode, bool pressed) {
-    if (type == DATA_TYPE_DEFAULT_KEY) {
-        if (!is_ble_work_state_input()) {
-            set_ble_work_state(WAIT_INPUT_MODE);
-            bm1_clear_buffer();
-        }
-    } else {
-        if (type != DATA_TYPE_STATE && is_ble_work_state() == INPUT_MODE) {
-            set_ble_work_state(WAIT_CONFIG_MODE);
-        }
-    }
-
-    protocol_cmd protocol_cmd_new = {type, keycode, pressed};
-    bufferPush(protocol_cmd_new);
-}
-
 
 void bm1_reset(void) {
     bm1_clear_buffer();
@@ -166,7 +178,10 @@ void    general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8
 }
 
 void analogg_ble_cmd_tx(uint8_t seqId) {
-    if (cmdDataBufferSize < 8) return;
+    if (cmdDataBufferSize < 8) {
+        ble_send_state = TX_IDLE;
+        return;
+    }
     ble_send_state = TX_START;
 
     uint8_t sum = 0, size = cmdDataBufferSize - 1;
@@ -180,6 +195,11 @@ void analogg_ble_cmd_tx(uint8_t seqId) {
     }
     cmdDataBuffer[size] = sum;
     ble_send(&SD1, cmdDataBuffer, cmdDataBufferSize);
+}
+
+void analogg_ble_cmd_tx_timeout(void) {
+    mSeqId++;
+    analogg_ble_cmd_tx(mSeqId);
 }
 
 #define INDEX_RESET -1
@@ -211,21 +231,14 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
     // LOG_Q_DEBUG("mId=%d Id=%d err=%d %d",mSeqId,seqId,errCode,timer_read());
     if (mSeqId != seqId || errCode != 0) {
         LOG_Q_INFO("errCode=%d", errCode);
-        ble_send_state = TX_START;
         return false;
     }
 
-    if (type == DATA_TYPE_KEY || type == DATA_TYPE_CONSUMER_KEY || type == DATA_TYPE_SYSTEM_CONTROL) {
-
-        LOG_Q_DEBUG("<-%02x",type);
-
-        set_ble_work_state(INPUT_MODE);
-
-        ble_send_state = TX_IDLE;
-        return true;
-    }
-
     switch (type) {
+        case DATA_TYPE_KEY ... DATA_TYPE_SYSTEM_CONTROL:
+            LOG_Q_DEBUG("<-%02x",type);
+            set_ble_work_state(INPUT_MODE);
+            return true;
         case DATA_TYPE_STATE:
             /**
              * @brief
@@ -242,12 +255,10 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
             //         analogg_ble_send_cmd_by_id(DATA_TYPE_SWITCH, tunnel);
             //     }
             // }
-
             ble_tunnel_state.activity_tunnel = data_package[8];
             for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++) {
                 ble_tunnel_state.list[i] = data_package[9 + i];
             }
-
             // log: indexstart=17
             if (dataLen > 0x0a) {
                 uint8_t logSize = dataLen - 0x0a;
@@ -259,8 +270,6 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
                 log_buffer[logSize] = 0;
                 LOG_B_INFO("%s", log_buffer);
             }
-
-            ble_send_state = TX_IDLE;
             return true;
         case DATA_TYPE_SWITCH:
             analogg_ble_send_cmd(DATA_TYPE_STATE);
@@ -275,7 +284,6 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
             break;
     }
     set_ble_work_state(CONFIG_MODE);
-    ble_send_state = TX_IDLE;
     return true;
 }
 
@@ -312,7 +320,11 @@ void analogg_ble_resolve_protocol(uint8_t byte) {
             pos = INDEX_RESET;
         else {
             pos++;
-            protocol_handle(&protocolData[0], pos);
+            if(protocol_handle(&protocolData[0], pos)){
+                ble_send_state = TX_IDLE;
+            }else{
+                ble_send_state = TX_START;
+            }
             pos = INDEX_RESET;
         }
     } else if (pos >= DATA_PARSE_MAX) {
@@ -415,7 +427,9 @@ void clear_keycode_buffer(void) {
 }
 
 bool analogg_ble_config_handle(protocol_cmd _protocol_cmd) {
-    if (is_ble_work_state() == INPUT_MODE) set_ble_work_state(WAIT_CONFIG_MODE);
+    if (is_ble_work_state() == INPUT_MODE) {
+        set_ble_work_state(WAIT_CONFIG_MODE);
+    }
     if (_protocol_cmd.type == DATA_TYPE_STATE) {
         general_protocol_array_of_byte(_protocol_cmd.type, 0, NULL);
         return true;
@@ -425,9 +439,7 @@ bool analogg_ble_config_handle(protocol_cmd _protocol_cmd) {
         general_protocol_array_of_byte(_protocol_cmd.type, sizeof(ble_protocol_payload_cmd), &ble_protocol_payload_cmd[0]);
         return true;
     }
-
     analogg_ble_reset_leds();
-
     switch (_protocol_cmd.type) {
         case DATA_TYPE_SWITCH:
             clear_keycode_buffer();
@@ -456,8 +468,9 @@ bool analogg_ble_config_handle(protocol_cmd _protocol_cmd) {
 }
 
 bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd) {
-    if (!is_ble_work_state_input()) set_ble_work_state(WAIT_INPUT_MODE);
-
+    if (!is_ble_work_state_input()) {
+        set_ble_work_state(WAIT_INPUT_MODE);
+    }
     uint8_t  i = 0, j = 0;
     uint16_t keycode = _protocol_cmd.value;
     if (IS_KEY(keycode)) {
