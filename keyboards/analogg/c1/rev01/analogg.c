@@ -325,7 +325,7 @@ void long_pressed_event(void) {
 }
 
 bool analogg_ble_cmd_handle(void) {
-    if (get_ble_send_state() == TX_IDLE && bufferPop(&pop_protocol_cmd)) {
+    if (bufferPop(&pop_protocol_cmd)) {
         // set_ble_send_state(TX_START);
         if (pop_protocol_cmd.type == DATA_TYPE_DEFAULT_KEY) {
             analogg_ble_keycode_handle(pop_protocol_cmd);

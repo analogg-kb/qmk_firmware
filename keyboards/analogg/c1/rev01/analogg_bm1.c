@@ -187,7 +187,7 @@ void analogg_ble_cmd_tx(uint8_t seqId) {
     uint8_t sum = 0, size = cmdDataBufferSize - 1;
     cmdDataBuffer[5] = seqId;
     if (cmdDataBuffer[3] == 0x01) {
-        LOG_Q_DEBUG("->%02x",cmdDataBuffer[3]);
+        LOG_Q_DEBUG("->%02x ts=%d",cmdDataBuffer[3],is_tx_idle());
     }
     
     for (uint8_t i = 0; i < size; i++) {
@@ -236,7 +236,7 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
 
     switch (type) {
         case DATA_TYPE_KEY ... DATA_TYPE_SYSTEM_CONTROL:
-            LOG_Q_DEBUG("<-%02x",type);
+            LOG_Q_DEBUG("<-%02x ts=%d",type,is_tx_idle());
             set_ble_work_state(INPUT_MODE);
             return true;
         case DATA_TYPE_STATE:
