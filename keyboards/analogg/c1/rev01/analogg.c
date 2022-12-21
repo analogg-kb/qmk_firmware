@@ -364,6 +364,7 @@ bool dip_switch_update_kb(uint8_t index, bool active) {
         return false;
     }
     if (index == 0) {
+        bm1_clear_buffer();
         default_layer_set(1UL << (active ? 2 : 0));
     }
     return true;

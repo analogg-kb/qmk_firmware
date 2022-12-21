@@ -107,6 +107,7 @@ void            analogg_ble_send_cmd_by_val(uint8_t type, uint8_t val);
 
 bool            is_tx_idle(void);
 uint16_t        get_buffer_size(void);
+void            bm1_clear_buffer(void);
 uint8_t         bufferPop(protocol_cmd *_buf);
 void            bm1_reset(void);
 

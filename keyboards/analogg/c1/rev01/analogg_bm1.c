@@ -20,7 +20,6 @@ bool              is_kb_startup = false;
 uint8_t  memsets(uint8_t *buff, int value, int len);
 void     resetGetData(void);
 uint16_t get_buffer_size(void);
-void     bm1_clear_buffer(void);
 void     clear_keycode_buffer(void);
 void     bufferPush(protocol_cmd _buf);
 void     general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t *bleData);
