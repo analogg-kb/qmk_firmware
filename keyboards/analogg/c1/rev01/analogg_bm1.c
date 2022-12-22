@@ -11,6 +11,7 @@
 uint8_t op_tunnel           = 1;
 // uint8_t last_save_tunnel = 1;
 volatile uint8_t  mSeqId; // 0-255
+protocol_cmd      pop_protocol_cmd = {0};
 
 _ble_work_state   ble_work_state = INPUT_MODE;
 static uint16_t   ble_send_state = TX_IDLE;
@@ -31,7 +32,8 @@ static const SerialConfig ble_uart_config = {
 
 bool ble_send(SerialDriver *sdp, const uint8_t *source, const size_t size) {
     // sdWrite(&SD1, cmdDataBuffer, cmdDataBufferSize);
-    bool success = (size_t)sdWriteTimeout(sdp, source, size, TIME_MS2I(100)) == size;
+    ble_send_state = TX_START;
+    bool success = (size_t)sdWriteTimeout(sdp, source, size, TIME_MS2I(1000)) == size;
     return success;
 }
 
@@ -146,14 +148,12 @@ void bm1_reset(void) {
     0x01：Key
     0x02：Consumer key
     0x03：System Control
-    0x04：Battery level
-    0x05：AT mode
+    ...
  */
-uint8_t cmdDataBuffer[160];
-uint8_t cmdDataBufferSize = 8;
-void    general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t *bleData) {
-    uint8_t offset = 0, sum = 0;
-    cmdDataBufferSize = 8;
+uint8_t cmdDataBuffer[CMD_BUFFER_SIZE];
+uint8_t cmdDataBufferSize = 0;
+void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t *bleData) {
+    uint8_t offset = 0, sum = 0, cmdDataBufferSize = 8;
     if (bleData != NULL) {
         cmdDataBufferSize += dataSize;
     }
@@ -170,36 +170,16 @@ void    general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8
         temp                    = *bleData++;
         cmdDataBuffer[offset++] = temp;
     }
-    for (uint8_t i = 0; i < offset; i++)
+    LOG_B_DEBUG("->%02X",dataType);
+    for (uint8_t i = 0; i < offset; i++) {
+        // uprintf(" %02x",cmdDataBuffer[i]);
         sum += cmdDataBuffer[i];
+    }
+    // uprintf("\n");
     cmdDataBuffer[offset++] = sum;
-    analogg_ble_cmd_tx(mSeqId);
-}
-
-void analogg_ble_cmd_tx(uint8_t seqId) {
-    if (cmdDataBufferSize < 8) {
-        ble_send_state = TX_IDLE;
-        return;
-    }
-    ble_send_state = TX_START;
-
-    uint8_t sum = 0, size = cmdDataBufferSize - 1;
-    cmdDataBuffer[5] = seqId;
-    if (cmdDataBuffer[3] == 0x01) {
-        LOG_Q_DEBUG("->%02x ts=%d",cmdDataBuffer[3],is_tx_idle());
-    }
-    
-    for (uint8_t i = 0; i < size; i++) {
-        sum += cmdDataBuffer[i];
-    }
-    cmdDataBuffer[size] = sum;
     ble_send(&SD1, cmdDataBuffer, cmdDataBufferSize);
 }
 
-void analogg_ble_cmd_tx_timeout(void) {
-    mSeqId++;
-    analogg_ble_cmd_tx(mSeqId);
-}
 
 #define INDEX_RESET -1
 #define PROTOCOL_DATA_SIZE 32
@@ -224,7 +204,9 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
     version = data_package[4];
     seqId   = data_package[5];
     dataLen = data_package[6];
-    if (dataLen == 0 || version != PROTOCOL_VERSION) return false;
+    if (dataLen == 0 || version != PROTOCOL_VERSION) {
+        return false;
+    }
     errCode = data_package[7];
 
     // LOG_Q_DEBUG("mId=%d Id=%d err=%d %d",mSeqId,seqId,errCode,timer_read());
@@ -233,9 +215,9 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
         return false;
     }
 
+    LOG_Q_DEBUG("<-%02x bs=%d",type,ble_send_state);
     switch (type) {
         case DATA_TYPE_KEY ... DATA_TYPE_SYSTEM_CONTROL:
-            LOG_Q_DEBUG("<-%02x ts=%d",type,is_tx_idle());
             set_ble_work_state(INPUT_MODE);
             return true;
         case DATA_TYPE_STATE:
@@ -270,6 +252,8 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
                 LOG_B_INFO("%s", log_buffer);
             }
             return true;
+        case DATA_TYPE_BATTERY_LEVEL://skip
+            return true;   
         case DATA_TYPE_SWITCH:
             analogg_ble_send_cmd(DATA_TYPE_STATE);
             break;
@@ -305,6 +289,7 @@ void analogg_ble_resolve_protocol(uint8_t byte) {
     } else if (pos == 5) {
         if (byte != mSeqId) {
             LOG_Q_INFO("id error,id=%02x seqId=%02x", byte, mSeqId);
+            ble_send_state = TX_START;
             pos = INDEX_RESET; // mSeqId
         }
     } else if (pos == 6) {
@@ -325,6 +310,7 @@ void analogg_ble_resolve_protocol(uint8_t byte) {
                 ble_send_state = TX_START;
             }
             pos = INDEX_RESET;
+            return;
         }
     } else if (pos >= DATA_PARSE_MAX) {
         pos = INDEX_RESET;
@@ -543,6 +529,26 @@ bool analogg_ble_keycode_handle(protocol_cmd _protocol_cmd) {
         return false;
     }
     return true;
+}
+
+bool analogg_ble_cmd_handle(void) {
+    if (bufferPop(&pop_protocol_cmd)) {
+        if (pop_protocol_cmd.type == DATA_TYPE_DEFAULT_KEY) {
+            analogg_ble_keycode_handle(pop_protocol_cmd);
+        } else {
+            analogg_ble_config_handle(pop_protocol_cmd);
+        }
+        return true;
+    }
+    return false;
+}
+
+void analogg_ble_cmd_handle_timeout(void) {
+    if (pop_protocol_cmd.type == DATA_TYPE_DEFAULT_KEY) {
+        analogg_ble_keycode_handle(pop_protocol_cmd);
+    } else {
+        analogg_ble_config_handle(pop_protocol_cmd);
+    }
 }
 
 void analogg_bm1_init(void) {

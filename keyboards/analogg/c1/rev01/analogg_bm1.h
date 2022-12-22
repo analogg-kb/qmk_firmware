@@ -62,6 +62,7 @@
 #define DATA_TYPE_SET_SLEEP 0x57
 
 #define PROTOCOL_BUFFER_SIZE 512
+#define CMD_BUFFER_SIZE 160
 
 typedef struct {
     uint8_t  type;
@@ -111,9 +112,10 @@ void            bm1_clear_buffer(void);
 uint8_t         bufferPop(protocol_cmd *_buf);
 void            bm1_reset(void);
 
+bool            analogg_ble_cmd_handle(void);
+void            analogg_ble_cmd_handle_timeout(void);
 void            analogg_ble_resolve_protocol(uint8_t byte);
 void            analogg_ble_cmd_tx(uint8_t seqId);
-void            analogg_ble_cmd_tx_timeout(void);
 bool            analogg_ble_config_handle(protocol_cmd _protocol_cmd);
 bool            analogg_ble_keycode_handle(protocol_cmd _protocol_cmd);
 

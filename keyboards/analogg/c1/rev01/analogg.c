@@ -44,12 +44,9 @@ uint16_t custom_pressed_long_time = 0;
 // Log tick time
 uint16_t log_time                 = 0;
 
-protocol_cmd pop_protocol_cmd = {0};
-
 bool timer_task_dip_ble_query(void);
 bool timer_task_dip_ble_query(void);
 void long_pressed_event(void);
-bool analogg_ble_cmd_handle(void);
 void matrix_scan_uart_recv(void);
 void matrix_scan_usb_state(void);
 bool dip_switch_update_kb(uint8_t index, bool active);
@@ -87,10 +84,10 @@ void matrix_scan_kb(void) {
 void bm1_process_record_key(uint16_t keycode, keyrecord_t *record) {
     rgb_ble_indicator_exit();
 
-    if(get_ble_activity_tunnel_state()!=CONNECTED_AND_ACTIVE) {
-        LOG_Q_DEBUG("send cmd fail");
-        return;
-    }
+    // if(get_ble_activity_tunnel_state()!=CONNECTED_AND_ACTIVE) {
+    //     LOG_Q_DEBUG("send cmd fail");
+    //     return;
+    // }
 
     analogg_ble_send_key(DATA_TYPE_DEFAULT_KEY, keycode, record->event.pressed);
 }
@@ -116,7 +113,7 @@ void bm1_process_record_function_key(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-    LOG_Q_DEBUG("kc=%04x pressed=%d bt=%d ts=%d", keycode, record->event.pressed,get_buffer_size(),is_tx_idle()); 
+    LOG_Q_DEBUG("kc=%04x pressed=%d bt=%d bs=%d", keycode, record->event.pressed,get_buffer_size(),get_ble_send_state()); 
     rgb_sleep_activity(keycode);
 
     // Process key directly when USB is connected
@@ -239,7 +236,7 @@ void timer_ble_mode(void) {
             analogg_ble_cmd_handle();
             break;
         case TX_TIMEOUT:
-            analogg_ble_cmd_tx_timeout();
+            analogg_ble_cmd_handle_timeout();
             break;
         default:
             ble_send_state_tick();
@@ -322,19 +319,6 @@ void long_pressed_event(void) {
             last_keycode   = KC_NO;
         }
     }
-}
-
-bool analogg_ble_cmd_handle(void) {
-    if (bufferPop(&pop_protocol_cmd)) {
-        // set_ble_send_state(TX_START);
-        if (pop_protocol_cmd.type == DATA_TYPE_DEFAULT_KEY) {
-            analogg_ble_keycode_handle(pop_protocol_cmd);
-        } else {
-            analogg_ble_config_handle(pop_protocol_cmd);
-        }
-        return true;
-    }
-    return false;
 }
 
 void matrix_scan_uart_recv(void) {
