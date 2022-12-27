@@ -59,8 +59,6 @@ extern uint16_t log_time;
 void pressed_timeout_turn_off_led(void);
 void key_pressed_rgb_enabled(void);
 
-void uart_rx_data_handle(uint8_t byte);
-bool uart_tx_data_handle(void);
 void long_pressed_event(void);
 
 uint16_t get_timer_count(void);
