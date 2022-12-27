@@ -41,10 +41,6 @@ uint8_t get_op_tunnel(void) {
     return op_tunnel;
 }
 
-uint8_t get_activity_tunnel(void) {
-    return ble_tunnel_state.activity_tunnel;
-}
-
 uint16_t get_ble_send_state(void) {
     return ble_send_state;
 }
@@ -57,12 +53,20 @@ void ble_send_state_tick(void) {
     ble_send_state++;
 }
 
+uint8_t get_activity_tunnel(void) {
+    return ble_tunnel_state.activity_tunnel;
+}
+
 uint8_t get_ble_activity_tunnel_state(void) {
     return ble_tunnel_state.list[ble_tunnel_state.activity_tunnel];
 }
 
 uint8_t get_ble_tunnel_state_to(uint8_t tunnel) {
     return ble_tunnel_state.list[tunnel];
+}
+
+uint8_t get_ble_activity_tunnel_lock_state(void) {
+    return ble_tunnel_state.lock_state[ble_tunnel_state.activity_tunnel];
 }
 
 void set_ble_work_state(_ble_work_state state) {
@@ -238,7 +242,8 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
             // }
             ble_tunnel_state.activity_tunnel = data_package[8];
             for (uint8_t i = 0; i < BLE_TUNNEL_NUM; i++) {
-                ble_tunnel_state.list[i] = data_package[9 + i];
+                ble_tunnel_state.list[i] = data_package[9 + i] & 0x0F;
+                ble_tunnel_state.lock_state[i] = data_package[9 + i] & 0xF0;
             }
             // log: indexstart=17
             if (dataLen > 0x0a) {

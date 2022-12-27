@@ -184,12 +184,23 @@ void timer_task_update_battery_level(void) {
     }
 }
 
-void timer_task_caps_lock(void) {
+void timer_task_caps_lock(bool is_ble_dip) {
     // CAPS_LOCK LED state
-    if (host_keyboard_led_state().caps_lock) {
-        led_indicator_set_caps_lock(RGB_WHITE);
+    if(is_ble_dip) {
+        uint8_t lock_state_val = get_ble_activity_tunnel_lock_state();
+        bool lock_state = IS_BLE_CAPS_LOCK_ON(lock_state_val);
+        // LOG_B_INFO("lock_state=%d %d",lock_state,lock_state_val);
+        if (lock_state) {
+            led_indicator_set_caps_lock(RGB_WHITE);
+        } else {
+            led_indicator_set_caps_lock(RGB_BLACK); 
+        }
     } else {
-        led_indicator_set_caps_lock(RGB_BLACK);
+        if (host_keyboard_led_state().caps_lock) {
+            led_indicator_set_caps_lock(RGB_WHITE);
+        } else {
+            led_indicator_set_caps_lock(RGB_BLACK);
+        }
     }
 }
 
@@ -252,7 +263,7 @@ uint32_t timer_callback(uint32_t trigger_time, void *cb_arg) {
         timer_task_update_battery_level();
         charge_task_delay_debounce_tick();
         led_indicator_set_power_pwm(charge_task_is_charging());
-        timer_task_caps_lock();
+        timer_task_caps_lock(is_ble_dip);
         if (is_ble_dip) {
             timer_task_update_ble_tunnel_indicator();
             timer_task_ble_state_query();

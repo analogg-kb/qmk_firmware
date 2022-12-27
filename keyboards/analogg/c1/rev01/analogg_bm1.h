@@ -28,6 +28,10 @@
 #    define PIO11_WAKEUP A5    // input(wakeup control): use it with (AT+SLEEPMODE!=0)
 #endif
 
+#define IS_BLE_CAPS_LOCK_ON(val)    ((val & 0x10) > 0)
+// #define IS_BLE_SCROLL_LOCKON(val)   (val & 0x20 > 0)
+// #define IS_BLE_NUMBER_LOCK_ON(val)  (val & 0x40 > 0)
+
 // DATA DIRECTION
 #define DATA_DIRECTION_QMK_BLE 0x09
 #define DATA_DIRECTION_BLE_QMK 0x89
@@ -85,6 +89,7 @@ typedef enum {
 
 typedef struct {
     uint8_t   activity_tunnel;
+    uint8_t   lock_state[BLE_TUNNEL_NUM];
     ble_state list[BLE_TUNNEL_NUM];
 } _ble_tunnel_state;
 
@@ -100,6 +105,7 @@ bool            is_ble_work_state_input(void);
 void            set_ble_work_state(_ble_work_state state);
 uint8_t         get_ble_activity_tunnel_state(void);
 uint8_t         get_ble_tunnel_state_to(uint8_t tunnel);
+uint8_t         get_ble_activity_tunnel_lock_state(void);
 
 void            analogg_ble_send_key(uint8_t type, uint16_t keycode, bool pressed);
 void            analogg_ble_send_cmd(uint8_t type);
