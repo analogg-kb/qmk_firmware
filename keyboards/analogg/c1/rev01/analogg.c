@@ -213,7 +213,9 @@ void timer_task_ble_state_query(void) {
         if (bt_log_time_count > UPDATE_BATTERY_TIME) {
             uint8_t chrg_rsoc = battery_query_level();
             bt_log_time_count = 0;
-            analogg_ble_send_cmd_by_val(DATA_TYPE_BATTERY_LEVEL, chrg_rsoc);
+            if(!rgb_sleep_is_sleep()) {
+                analogg_ble_send_cmd_by_val(DATA_TYPE_BATTERY_LEVEL, chrg_rsoc);;
+            }
         }
     }
 }
@@ -221,15 +223,15 @@ void timer_task_ble_state_query(void) {
 void timer_task_ble_indicator_blink(void) {
     uint8_t state = get_ble_activity_tunnel_state();
     if (state == ADV_WAIT_CONNECTING_ACTIVE) {
-        if (time_count % T200MS == 0) {
+        if (time_count % T400MS < T200MS) {
             led_indicator_set_ble_to(get_activity_tunnel());
-        } else if (time_count % T400MS == 0) {
+        } else {
             led_indicator_set_ble(RGB_BLACK);
         }
     } else if (state == IDLE || state == ADV_WAIT_CONNECTING || state == ADV_WAIT_CONNECTING_INACTIVE) {
-        if (time_count % T1S == 0) {
+        if (time_count % T2S < T1S) {
             led_indicator_set_ble_to(get_activity_tunnel());
-        } else if (time_count % T2S == 0) {
+        } else {
             led_indicator_set_ble(RGB_BLACK);
         }
     }
