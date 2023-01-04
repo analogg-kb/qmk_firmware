@@ -174,7 +174,7 @@ void general_protocol_array_of_byte(uint8_t dataType, uint8_t dataSize, uint8_t 
         temp                    = *bleData++;
         cmdDataBuffer[offset++] = temp;
     }
-    LOG_B_DEBUG("->%02X",dataType);
+    // LOG_B_DEBUG("->%02X",dataType);
     for (uint8_t i = 0; i < offset; i++) {
         // uprintf(" %02x",cmdDataBuffer[i]);
         sum += cmdDataBuffer[i];
@@ -219,7 +219,7 @@ bool protocol_handle(uint8_t data_package[], uint8_t size) {
         return false;
     }
 
-    LOG_Q_DEBUG("<-%02x bs=%d",type,ble_send_state);
+    // LOG_Q_DEBUG("<-%02x bs=%d",type,ble_send_state);
     switch (type) {
         case DATA_TYPE_KEY ... DATA_TYPE_SYSTEM_CONTROL:
             set_ble_work_state(INPUT_MODE);
