@@ -6,7 +6,7 @@
 #include "analogg_bm1.h"
 #include "eeprom.h"
 
-#define RGB_SLEEP_TIMEOUT 30000  // 3 * 60 * 1000
+#define RGB_SLEEP_TIMEOUT 120000  // 120 * 1000
 
 typedef enum {
     RGB_SLEEP_AWAKE = 0,
@@ -89,7 +89,7 @@ void rgb_sleep_activity(uint16_t keycode) {
     if (keycode == RGB_TOG) {
         g_sleep_info.rgb_last_enable = !rgb_matrix_is_enabled();
     }
-    
+
     if (g_sleep_info.state == RGB_SLEEP_SLEEPPING) {
         rgb_sleep_wakeup();
     }
