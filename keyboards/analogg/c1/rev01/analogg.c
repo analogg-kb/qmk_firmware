@@ -43,6 +43,7 @@ uint16_t last_keycode             = KC_NO;
 uint16_t custom_pressed_long_time = 0;
 // Log tick time
 uint16_t log_time                 = 0;
+uint8_t last_battery_level        = 0;
 
 bool timer_task_dip_ble_query(void);
 bool timer_task_dip_ble_query(void);
@@ -173,15 +174,31 @@ void timer_task_update_ble_tunnel_indicator(void) {
 void timer_task_update_battery_level(void) {
     // BATTERY LEVEL LED state
     uint8_t chrg_rsoc = battery_query_level();
-    if (chrg_rsoc < 10) {
+
+    if (battery_level_task_delay_debounce_tick(chrg_rsoc)){
+        last_battery_level = get_average_battery_level();
+    }
+
+    if (last_battery_level < 10) {
         led_indicator_set_battery_level(RGB_RED);
-    } else if (chrg_rsoc >= 10 && chrg_rsoc < 40) { // 10-40
+    } else if (last_battery_level >= 10 && last_battery_level < 40) { // 10-40
         led_indicator_set_battery_level(RGB_ORANGE);
-    } else if (chrg_rsoc >= 40 && chrg_rsoc < 70) { // 40-70
+    } else if (last_battery_level >= 40 && last_battery_level < 70) { // 40-70
         led_indicator_set_battery_level(RGB_YELLOW);
-    } else if (chrg_rsoc >= 70) {
+    } else if (last_battery_level >= 70) {
         led_indicator_set_battery_level(RGB_GREEN);
     }
+
+    //todo test
+    // if (last_battery_level < 73) {
+    //     led_indicator_set_battery_level(RGB_RED);
+    // } else if (last_battery_level >= 73 && last_battery_level < 74) { // 10-40
+    //     led_indicator_set_battery_level(RGB_ORANGE);
+    // } else if (last_battery_level >= 74 && last_battery_level < 75) { // 40-70
+    //     led_indicator_set_battery_level(RGB_YELLOW);
+    // } else if (last_battery_level >= 75) {
+    //     led_indicator_set_battery_level(RGB_GREEN);
+    // }
 }
 
 void timer_task_caps_lock(bool is_ble_dip) {
@@ -211,7 +228,8 @@ void timer_task_ble_state_query(void) {
         // Update battery level every 1 minutes
         bt_log_time_count++;
         if (bt_log_time_count > UPDATE_BATTERY_TIME) {
-            uint8_t chrg_rsoc = battery_query_level();
+            uint8_t chrg_rsoc = get_average_battery_level();
+            // uint8_t chrg_rsoc = battery_query_level();
             bt_log_time_count = 0;
             if(!rgb_sleep_is_sleep()) {
                 analogg_ble_send_cmd_by_val(DATA_TYPE_BATTERY_LEVEL, chrg_rsoc);;

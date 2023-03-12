@@ -23,4 +23,8 @@ void charge_task_scan_state_and_tick(void);
 void charge_task_delay_debounce_tick(void);
 bool charge_task_is_charging(void);
 
+bool battery_level_task_delay_debounce_tick(uint8_t battery_level);
+uint8_t get_average_battery_level(void);
+
+
 uint8_t battery_query_level(void);

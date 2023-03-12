@@ -6,8 +6,9 @@
 #include "analogg.h"
 #include "analogg_bm1.h"
 
-#define CHARGE_DEBOUNCE_TICK_VAL 30
-#define DEBOUNCE_TIMEOUT         100
+#define CHARGE_DEBOUNCE_TICK_VAL             30
+#define DEBOUNCE_TIMEOUT                     100
+#define DEBOUNCE_TIMEOUT_BATTERY_LEVEL       100
 
 typedef struct {
     bool is_charging;
@@ -16,6 +17,48 @@ typedef struct {
 } _charge_info;
 
 _charge_info charge_info = {false,0,0};
+
+typedef struct {
+    bool is_timeout;
+    uint8_t value;
+    uint8_t last_value;
+    uint32_t sum;
+    uint16_t debounce_tick;
+} _battery_level;
+
+_battery_level battery_level = {false,0,0,0};
+
+bool battery_level_task_delay_debounce_tick(uint8_t value) {
+
+    if (battery_level.value == 0) {
+        battery_level.value = value;    //first
+        return true;
+    }
+    
+    battery_level.debounce_tick++;
+    battery_level.sum += value;
+    if (battery_level.debounce_tick >= DEBOUNCE_TIMEOUT_BATTERY_LEVEL) {
+        battery_level.value = battery_level.sum / battery_level.debounce_tick;
+        if (battery_level.last_value != battery_level.value) {
+            battery_level.last_value = battery_level.value;
+        }
+        
+        if (!charge_info.is_charging && battery_level.value > battery_level.last_value) {
+            battery_level.value = battery_level.last_value;
+        } 
+        
+        // LOG_Q_INFO("battery level a=%d  b=%d,", value, battery_level.value); 
+
+        battery_level.sum = 0;
+        battery_level.debounce_tick = 0;
+        return true;
+    } 
+    return false;
+}
+
+uint8_t get_average_battery_level(void){
+    return battery_level.value;
+}
 
 void charge_task_scan_state_and_tick(void) {
     if (IS_CHARGE_STATE()) {
